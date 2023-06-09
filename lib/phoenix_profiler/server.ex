@@ -2,7 +2,6 @@ defmodule PhoenixProfiler.Server do
   @moduledoc false
   use GenServer
 
-  @endpoint_table __MODULE__.Endpoint
   @listener_table __MODULE__.Listener
   @live_table __MODULE__.Live
   @entry_table __MODULE__.Entry
@@ -76,7 +75,6 @@ defmodule PhoenixProfiler.Server do
         :error ->
           token = PhoenixProfiler.Utils.random_unique_id()
           :persistent_term.put({PhoenixProfiler.Endpoint, endpoint}, nil)
-          true = :ets.insert(@endpoint_table, {endpoint, token})
           true = :ets.insert(@live_table, {owner, token})
           GenServer.cast(__MODULE__, {:monitor, owner})
           token
@@ -99,7 +97,6 @@ defmodule PhoenixProfiler.Server do
   """
   def reset do
     :ets.delete_all_objects(@entry_table)
-    :ets.delete_all_objects(@endpoint_table)
     :ok
   end
 
@@ -147,7 +144,6 @@ defmodule PhoenixProfiler.Server do
     Process.flag(:trap_exit, true)
 
     :persistent_term.put(PhoenixProfiler, %{system: PhoenixProfiler.Utils.system()})
-    :ets.new(@endpoint_table, [:named_table, :public, :bag])
     :ets.new(@live_table, [:named_table, :public, :set])
     :ets.new(@listener_table, [:named_table, :public, :bag])
     :ets.new(@entry_table, [:named_table, :public, :duplicate_bag])
