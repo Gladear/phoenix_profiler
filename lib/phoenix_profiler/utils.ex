@@ -81,7 +81,7 @@ defmodule PhoenixProfiler.Utils do
   end
 
   defp owner_pid(%Plug.Conn{} = conn), do: conn.owner
-  defp owner_pid(%LiveView.Socket{} = socket), do: transport_pid(socket)
+  defp owner_pid(%LiveView.Socket{} = socket), do: socket.transport_pid
 
   defp profiler_base_url(endpoint, config) do
     endpoint.url() <> profiler_link_base(config[:profiler_link_base])
@@ -178,16 +178,6 @@ defmodule PhoenixProfiler.Utils do
 
   defp version(app) when is_atom(app) do
     Application.spec(app)[:vsn]
-  end
-
-  @doc """
-  Returns the `transport_pid` for a given `socket`.
-  """
-  # TODO: replace with `socket.transport_pid` when we require LiveView v0.16+.
-  def transport_pid(%LiveView.Socket{} = socket) do
-    Map.get_lazy(socket, :transport_pid, fn ->
-      LiveView.transport_pid(socket)
-    end)
   end
 
   @doc false

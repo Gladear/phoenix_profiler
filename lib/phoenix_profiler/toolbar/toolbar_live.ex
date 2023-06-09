@@ -162,7 +162,7 @@ defmodule PhoenixProfiler.ToolbarLive do
 
   defp subscribe(socket) do
     if connected?(socket) do
-      subscribe(socket, PhoenixProfiler.Utils.transport_pid(socket))
+      subscribe(socket, socket.transport_pid)
     else
       socket
     end
@@ -181,7 +181,7 @@ defmodule PhoenixProfiler.ToolbarLive do
   @impl Phoenix.LiveView
   def handle_info({:subscribe, transport_pid}, socket) do
     socket =
-      if PhoenixProfiler.Utils.transport_pid(socket) == transport_pid,
+      if socket.transport_pid == transport_pid,
         do: subscribe(socket, transport_pid),
         else: socket
 
