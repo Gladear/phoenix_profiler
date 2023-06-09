@@ -26,7 +26,6 @@ defmodule Demo.MixProject do
   defp deps do
     [
       {:phoenix_profiler, path: "../"},
-
       {:phoenix, "~> 1.7.3"},
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},

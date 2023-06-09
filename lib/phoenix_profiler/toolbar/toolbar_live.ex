@@ -40,7 +40,7 @@ defmodule PhoenixProfiler.ToolbarLive do
       |> assign(:profile, profile)
 
     socket =
-      case ProfileStore.remote_get(profile) do
+      case ProfileStore.get(profile.token) do
         nil -> assign_error_toolbar(socket)
         remote_profile -> assign_toolbar(socket, remote_profile)
       end
@@ -102,7 +102,7 @@ defmodule PhoenixProfiler.ToolbarLive do
   defp apply_request(socket, profile) do
     %{conn: %Plug.Conn{} = conn} = profile
     router = conn.private[:phoenix_router]
-    {helper, plug, action} = Routes.info(socket.assigns.profile.node, conn)
+    {helper, plug, action} = Routes.info(conn)
     socket = %{socket | private: Map.put(socket.private, :phoenix_router, router)}
 
     assign(socket, :request, %{
@@ -121,7 +121,7 @@ defmodule PhoenixProfiler.ToolbarLive do
     socket
     |> update(:root_pid, fn _ -> route.root_pid end)
     |> update(:request, fn req ->
-      {helper, plug, action} = Routes.info(socket.assigns.profile.node, router, route)
+      {helper, plug, action} = Routes.info(router, route)
 
       %{req | plug: inspect(plug), action: inspect(action), router_helper: helper}
     end)

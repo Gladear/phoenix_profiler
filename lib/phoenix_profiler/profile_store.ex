@@ -1,7 +1,6 @@
 defmodule PhoenixProfiler.ProfileStore do
   # Helpers for fetching profile data from local and remote nodes.
   @moduledoc false
-  alias PhoenixProfiler.Profile
 
   @doc """
   Returns the profile for a given `token` if it exists.
@@ -25,12 +24,5 @@ defmodule PhoenixProfiler.ProfileStore do
             Map.merge(acc, data)
         end)
     end
-  end
-
-  @doc """
-  Fetches a profile on a remote node.
-  """
-  def remote_get(%Profile{} = profile) do
-    :rpc.call(profile.node, __MODULE__, :get, [profile.token])
   end
 end

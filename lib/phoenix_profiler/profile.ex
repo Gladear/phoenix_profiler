@@ -3,7 +3,6 @@ defmodule PhoenixProfiler.Profile do
   @moduledoc false
   defstruct [
     :endpoint,
-    :node,
     :start_time,
     :system,
     :system_time,
@@ -22,7 +21,6 @@ defmodule PhoenixProfiler.Profile do
   @type t :: %__MODULE__{
           :endpoint => module(),
           :token => String.t(),
-          :node => node(),
           :start_time => integer(),
           :system => system(),
           :system_time => integer(),
@@ -32,10 +30,11 @@ defmodule PhoenixProfiler.Profile do
   @doc """
   Returns a new profile.
   """
-  def new(endpoint, token, base_url, system_time) when is_atom(endpoint) and is_binary(token) and is_binary(base_url) and is_integer(system_time) do
+  def new(endpoint, token, base_url, system_time)
+      when is_atom(endpoint) and is_binary(token) and is_binary(base_url) and
+             is_integer(system_time) do
     %__MODULE__{
       endpoint: endpoint,
-      node: node(),
       start_time: System.monotonic_time(),
       system: PhoenixProfiler.system(),
       system_time: system_time,
