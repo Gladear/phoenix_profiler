@@ -38,15 +38,18 @@ defmodule PhoenixProfiler.ToolbarLive do
     <div class="phxprof-toolbar-container">
       <div class="phxprof-toolbar-panel phxprof-toolbar-panel-request" aria-label={"Status, #{@request.status_phrase}"}>
         <div class="phxprof-toolbar-icon">
-          <span class={"phxprof-toolbar-status phxprof-toolbar-status-#{@request.class}"}><%= case @request.status_code do %>
-          <% ":|" -> %><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-7.536 5.879a1 1 0 001.415 0 3 3 0 014.242 0 1 1 0 001.415-1.415 5 5 0 00-7.072 0 1 1 0 000 1.415z" clip-rule="evenodd" />
-          </svg>
-          <% _ -> %><%= @request.status_code %><% end %>
+          <span class={"phxprof-toolbar-status phxprof-toolbar-status-#{@request.class}"}>
+          <%= if @request.status_code == ":|" do %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-7.536 5.879a1 1 0 001.415 0 3 3 0 014.242 0 1 1 0 001.415-1.415 5 5 0 00-7.072 0 1 1 0 000 1.415z" clip-rule="evenodd" />
+            </svg>
+          <% else %>
+            <%= @request.status_code %>
+          <% end %>
           </span>
           <%= if @request.router_helper do %>
-          <span class="phxprof-toolbar-label"> @</span>
-          <span class="phxprof-toolbar-value" title={@request.router_helper}><%= @request.router_helper %></span>
+            <span class="phxprof-toolbar-label"> @</span>
+            <span class="phxprof-toolbar-value" title={@request.router_helper}><%= @request.router_helper %></span>
           <% end %>
         </div>
         <div class="phxprof-toolbar-info">
@@ -71,8 +74,8 @@ defmodule PhoenixProfiler.ToolbarLive do
             <span><%= @request.endpoint %></span>
           </div>
         </div>
-      </div><%= if @durations do %>
-      <div class="phxprof-toolbar-panel phxprof-toolbar-panel-duration" aria-label="Durations">
+      </div>
+      <div :if={@durations} class="phxprof-toolbar-panel phxprof-toolbar-panel-duration" aria-label="Durations">
         <div class="phxprof-toolbar-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
@@ -81,22 +84,23 @@ defmodule PhoenixProfiler.ToolbarLive do
           <span class="phxprof-toolbar-value"><%= value %></span>
           <span class="phxprof-toolbar-label"><%= label %></span>
         </div>
-        <div class="phxprof-toolbar-info"><%= if @durations.total do %>
-          <div class="phxprof-toolbar-info-item">
+        <div class="phxprof-toolbar-info">
+          <div :if={@durations.total} class="phxprof-toolbar-info-item">
             <b>Total Duration</b>
             <span><%= @durations.total.value %><%= @durations.total.label %></span>
-          </div><% end %><%= if @durations.endpoint do %>
-          <div class="phxprof-toolbar-info-item">
+          </div>
+          <div :if={@durations.endpoint} class="phxprof-toolbar-info-item">
             <b>Endpoint Duration</b>
             <span><%= @durations.endpoint.value %> <%= @durations.endpoint.label %></span>
-          </div><% end %><%= if @durations.latest_event do %>
-          <div class="phxprof-toolbar-info-item">
+          </div>
+          <div :if={@durations.latest_event} class="phxprof-toolbar-info-item">
             <b>Latest Event Duration</b>
             <span><%= @durations.latest_event.value %><%= @durations.latest_event.label %></span>
-          </div><% end %>
+          </div>
         </div>
-      </div><% end %><%= if @memory do %>
-      <div class="phxprof-toolbar-panel phxprof-toolbar-panel-memory" aria-label={"Memory, #{@memory.phrase}"}>
+      </div>
+
+      <div :if={@memory} class="phxprof-toolbar-panel phxprof-toolbar-panel-memory" aria-label={"Memory, #{@memory.phrase}"}>
         <div class="phxprof-toolbar-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -114,8 +118,9 @@ defmodule PhoenixProfiler.ToolbarLive do
             <span><%= @memory.value %> <%= @memory.label %></span>
           </div>
         </div>
-      </div><% end %><%= unless Enum.empty?(@exits) do %>
-      <div class="phxprof-toolbar-panel phxprof-toolbar-panel-exits phxprof-toolbar-status-red" aria-label="Exits">
+      </div>
+
+      <div :if={not Enum.empty?(@exits)} class="phxprof-toolbar-panel phxprof-toolbar-panel-exits phxprof-toolbar-status-red" aria-label="Exits">
         <div class="phxprof-toolbar-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -123,14 +128,15 @@ defmodule PhoenixProfiler.ToolbarLive do
           <span class="phxprof-toolbar-value"><%= @exits_count %></span>
         </div>
         <div class="phxprof-toolbar-info">
-          <div id="phxprof-toolbar-exits" class="phxprof-toolbar-info-group" phx-update="prepend"><%= for %{at: at, ref: ref, reason: reason} <- @exits do %>
-            <div id={ref} class="phxprof-toolbar-info-item">
+          <div id="phxprof-toolbar-exits" class="phxprof-toolbar-info-group" phx-update="prepend">
+            <div :for={%{at: at, ref: ref, reason: reason} <- @exits} id={ref} class="phxprof-toolbar-info-item">
               <b><%= at %></b>
               <span><pre><%= reason %></pre></span>
-            </div><% end %>
+            </div>
           </div>
         </div>
-      </div><% end %>
+      </div>
+
       <div class="phxprof-toolbar-panel phxprof-toolbar-panel-config phxprof-toolbar-panel-right" aria-label="Config">
         <div class="phxprof-toolbar-icon">
           <div class="phxprof-toolbar-label"></div>
