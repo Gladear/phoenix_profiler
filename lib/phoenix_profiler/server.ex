@@ -13,36 +13,6 @@ defmodule PhoenixProfiler.Server do
   @process_dict_key :phoenix_profiler_token
 
   @doc """
-  Returns the profile token for the current process if it exists.
-
-  This function checks the current process and each of its callers
-  until it finds a token, then it immediately returns `{:ok, token}`,
-  otherwise it returns `:error`.
-
-  ## Examples
-
-      PhoenixProfiler.Server.find_token()
-
-  """
-  def find_token do
-    callers = [self() | Process.get(:"$callers", [])]
-
-    Enum.reduce_while(callers, :error, fn caller, acc ->
-      case Process.info(caller, :dictionary) do
-        {:dictionary, dict} ->
-          if token = dict[@process_dict_key] do
-            {:halt, {:ok, token}}
-          else
-            {:cont, acc}
-          end
-
-        nil ->
-          {:cont, acc}
-      end
-    end)
-  end
-
-  @doc """
   Update the profiling status of the caller.
 
   Returns the previous status, or `nil` if the status was not yet set.
@@ -203,7 +173,7 @@ defmodule PhoenixProfiler.Server do
     system_time = System.system_time()
 
     with true <- profiling?(),
-         {:ok, token} <- find_token(),
+         token when not is_nil(token) <- Process.get(@process_dict_key),
          {:keep, data} <- filter_event(filter, _arg = nil, event, measurements, metadata) do
       # todo: ensure span ref is set on data (or message) if it exists
       event_ts = measurements[:system_time] || system_time
