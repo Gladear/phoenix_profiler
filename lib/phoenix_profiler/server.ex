@@ -185,7 +185,7 @@ defmodule PhoenixProfiler.Server do
     :telemetry.attach_many(
       {__MODULE__, self()},
       events,
-      &handle_execute/4,
+      &__MODULE__.handle_execute/4,
       %{filter: filter}
     )
 
@@ -198,7 +198,7 @@ defmodule PhoenixProfiler.Server do
   end
 
   # Forwards telemetry events to subscribed listeners.
-  defp handle_execute(event, measurements, metadata, %{filter: filter}) do
+  def handle_execute(event, measurements, metadata, %{filter: filter}) do
     # capture system_time early in case we need it
     system_time = System.system_time()
 
