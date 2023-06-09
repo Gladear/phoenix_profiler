@@ -53,6 +53,8 @@ defmodule DemoWeb do
       use Phoenix.LiveView,
         layout: {DemoWeb.Layouts, :app}
 
+      on_mount PhoenixProfiler
+
       unquote(html_helpers())
     end
   end

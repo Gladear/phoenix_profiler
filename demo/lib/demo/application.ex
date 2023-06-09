@@ -13,7 +13,8 @@ defmodule Demo.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Demo.PubSub},
       # Start the Endpoint (http/https)
-      DemoWeb.Endpoint
+      DemoWeb.Endpoint,
+      PhoenixProfiler.Server
       # Start a worker by calling: Demo.Worker.start_link(arg)
       # {Demo.Worker, arg}
     ]

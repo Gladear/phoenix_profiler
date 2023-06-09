@@ -14,7 +14,8 @@ config :demo, DemoWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "7Nm20lI9NJYOYUVcG7RNDndLe7kMZx1HRS6+ubqesvPAgQtqylTcQS5fRx+FwPOY",
-  watchers: []
+  watchers: [],
+  phoenix_profiler: []
 
 # ## SSL Support
 #
