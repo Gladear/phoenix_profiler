@@ -64,7 +64,11 @@ defmodule PhoenixProfiler.Utils do
   defp maybe_check_socket_connection(%Plug.Conn{}), do: :ok
 
   defp maybe_check_socket_connection(%LiveView.Socket{} = socket) do
-    check_socket_connection(socket)
+    if LiveView.connected?(socket) do
+      :ok
+    else
+      {:error, :waiting_for_connection}
+    end
   end
 
   defp new_profile(conn_or_socket, endpoint, config, system_time) do
@@ -92,12 +96,9 @@ defmodule PhoenixProfiler.Utils do
     conn_or_socket
   end
 
-  @doc """
-  Returns the endpoint for a given `conn` or `socket`.
-  """
-  def endpoint(conn_or_socket)
-  def endpoint(%Plug.Conn{} = conn), do: conn.private.phoenix_endpoint
-  def endpoint(%LiveView.Socket{endpoint: endpoint}), do: endpoint
+  # Returns the endpoint for a given `conn` or `socket`.
+  defp endpoint(%Plug.Conn{} = conn), do: conn.private.phoenix_endpoint
+  defp endpoint(%LiveView.Socket{endpoint: endpoint}), do: endpoint
 
   defp enable_profiler_error(conn_or_socket, :profile_already_exists) do
     Server.profiling(true)
@@ -137,19 +138,6 @@ defmodule PhoenixProfiler.Utils do
 
   def disable_profiler(%Plug.Conn{} = conn), do: conn
   def disable_profiler(%LiveView.Socket{} = socket), do: socket
-
-  @doc """
-  Checks whether or not a socket is connected.
-  """
-  @spec check_socket_connection(socket :: LiveView.Socket.t()) ::
-          :ok | {:error, :waiting_for_connection}
-  def check_socket_connection(%LiveView.Socket{} = socket) do
-    if LiveView.connected?(socket) do
-      :ok
-    else
-      {:error, :waiting_for_connection}
-    end
-  end
 
   @doc """
   Assigns a new private key and value in the socket.
@@ -214,38 +202,5 @@ defmodule PhoenixProfiler.Utils do
        when action in [:start, :stop] do
     :telemetry.execute([:phxprof, :plug, action], measurements, %{conn: conn})
     conn
-  end
-
-  @doc false
-  def sort_by(enumerable, sort_by_fun, :asc) do
-    Enum.sort_by(enumerable, sort_by_fun, &<=/2)
-  end
-
-  def sort_by(enumerable, sort_by_fun, :desc) do
-    Enum.sort_by(enumerable, sort_by_fun, &>=/2)
-  end
-
-  # backwards compability
-  if Version.match?(System.version(), ">= 1.10.0") do
-    defdelegate map_pop!(map, key), to: Map, as: :pop!
-  else
-    # https://github.com/elixir-lang/elixir/blob/e29f1492a48c53ff41b4d60b6a7b5307692145f6/lib/elixir/lib/map.ex#L734
-    def map_pop!(map, key) do
-      case :maps.take(key, map) do
-        {_, _} = tuple -> tuple
-        :error -> raise KeyError, key: key, term: map
-      end
-    end
-  end
-
-  if String.to_integer(System.otp_release()) >= 24 do
-    defdelegate queue_fold(func, initial, queue), to: :queue, as: :fold
-  else
-    # https://github.com/erlang/otp/blob/9f87c568cd3cdb621cf4cae69ccce880be4ea1b6/lib/stdlib/src/queue.erl#L442
-    def queue_fold(func, initial, {r, f})
-        when is_function(func, 2) and is_list(r) and is_list(f) do
-      acc = :lists.foldl(func, initial, f)
-      :lists.foldr(func, acc, r)
-    end
   end
 end

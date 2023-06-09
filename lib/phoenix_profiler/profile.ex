@@ -32,12 +32,10 @@ defmodule PhoenixProfiler.Profile do
   @doc """
   Returns a new profile.
   """
-  def new(node \\ node(), endpoint, token, base_url, system_time)
-      when is_atom(endpoint) and is_binary(token) and
-             is_binary(base_url) and is_integer(system_time) do
+  def new(endpoint, token, base_url, system_time) when is_atom(endpoint) and is_binary(token) and is_binary(base_url) and is_integer(system_time) do
     %__MODULE__{
       endpoint: endpoint,
-      node: node,
+      node: node(),
       start_time: System.monotonic_time(),
       system: PhoenixProfiler.system(),
       system_time: system_time,

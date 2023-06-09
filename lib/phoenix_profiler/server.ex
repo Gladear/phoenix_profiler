@@ -87,13 +87,6 @@ defmodule PhoenixProfiler.Server do
   end
 
   @doc """
-  Unsubscribes the caller from events for the given `token`.
-  """
-  def unsubscribe(token) do
-    :ets.delete_object(@listener_table, {token, self()})
-  end
-
-  @doc """
   Returns a list of entries for a given `token`.
   """
   def lookup_entries(token) do
@@ -192,7 +185,7 @@ defmodule PhoenixProfiler.Server do
     :telemetry.attach_many(
       {__MODULE__, self()},
       events,
-      &__MODULE__.handle_execute/4,
+      &handle_execute/4,
       %{filter: filter}
     )
 
@@ -204,10 +197,8 @@ defmodule PhoenixProfiler.Server do
     {:ok, %{request_sweep_interval: request_sweep_interval}}
   end
 
-  @doc """
-  Forwards telemetry events to subscribed listeners.
-  """
-  def handle_execute(event, measurements, metadata, %{filter: filter}) do
+  # Forwards telemetry events to subscribed listeners.
+  defp handle_execute(event, measurements, metadata, %{filter: filter}) do
     # capture system_time early in case we need it
     system_time = System.system_time()
 

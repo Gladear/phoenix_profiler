@@ -13,20 +13,7 @@ defmodule PhoenixProfiler do
   @impl Plug
   defdelegate call(conn, opts), to: PhoenixProfiler.Plug
 
-  # TODO: Remove when we require LiveView v0.17+.
   @doc false
-  def mount(params, session, socket) do
-    on_mount(:default, params, session, socket)
-  end
-
-  @doc """
-  The callback for the mount stage of the LiveView lifecycle.
-
-  To enable live profiling, add the following on your LiveView:
-
-      on_mount PhoenixProfiler
-
-  """
   def on_mount(_arg, _params, _session, socket) do
     {:cont, PhoenixProfiler.Utils.maybe_mount_profile(socket)}
   end
@@ -107,17 +94,6 @@ defmodule PhoenixProfiler do
     case :persistent_term.get(PhoenixProfiler) do
       %{system: %{} = system} -> system
       _ -> nil
-    end
-  end
-
-  @doc """
-  Returns a list of known endpoints.
-
-  It is important to note that the order is not guaranteed.
-  """
-  def known_endpoints do
-    for {{PhoenixProfiler.Endpoint, endpoint}, _} <- :persistent_term.get() do
-      endpoint
     end
   end
 end
