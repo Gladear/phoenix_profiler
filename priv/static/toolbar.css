@@ -20,16 +20,43 @@
   --size-icon: 20px;
   --size-logo-height: 28px;
   --size-logo-width: 41px;
-  --size-mini-toolbar-height: var(--size-7);
-  --size-mini-toolbar-width: var(--size-8);
-  --size-mini-logo-height: 15px;
-  --size-mini-logo-width: 22px;
+
   --size-toolbar: var(--size-11);
 }
 
 /* Show and hide transitions */
 
-.phxprof-toolbar > .phxprof-minitoolbar,
+.phxprof-minitoolbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  display: block;
+  width: 2.5rem;
+  height: 1.75rem;
+  padding: 0.25rem;
+  box-sizing: border-box;
+  border-top-left-radius: 0.25rem;
+  background-color: var(--color-canvas-default);
+  z-index: var(--layer-top);
+  transform: translateY(100%);
+  transition: transform 1s ease;
+}
+
+.phxprof-toolbar.miniaturized > .phxprof-minitoolbar {
+  transform: translateY(0);
+}
+
+.phxprof-minitoolbar .show-button {
+  width: 100%;
+  height: 100%;
+  box-sizing: content-box;
+  background-size: auto 100%;
+  background-image: var(--logo-phoenix);
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
 .phxprof-toolbar > .phxprof-toolbar-view {
   -webkit-transition: height 1s ease;
   -moz-transition: height 1s ease;
@@ -38,52 +65,12 @@
   transition: height 1s ease;
 }
 
-.phxprof-toolbar.miniaturized > .phxprof-minitoolbar {
-  height: var(--size-mini-toolbar-height);
-}
-
 .phxprof-toolbar.miniaturized > .phxprof-toolbar-view {
   height: var(--size-0);
 }
 
 /*! Symfony Web Debug Toolbar v5.3.9 | MIT License | https://github.com/symfony/symfony/blob/842ecc50f04ea0067ac300e2396a391dff687498/src/Symfony/Bundle/WebProfilerBundle/Resources/views/Profiler/toolbar.css.twig */
 
-.phxprof-minitoolbar {
-  background-color: var(--color-canvas-default);
-  border-top-left-radius: var(--size-1);
-  bottom: 0;
-  box-sizing: border-box;
-  display: block;
-  height: var(--size-0);
-  padding: 0 var(--size-1);
-  position: fixed;
-  right: 0;
-  z-index: var(--layer-top);
-}
-
-.phxprof-minitoolbar button {
-  background-color: transparent;
-  padding: 0;
-  border: none;
-  max-height: var(--size-mini-toolbar-height);
-  max-width: var(--size-mini-toolbar-width);
-}
-
-.phxprof-minitoolbar .show-button {
-  content: '';
-  display: inline-block;
-  cursor: pointer;
-  box-sizing: content-box;
-  height: var(--size-mini-logo-height);
-  padding: 0 var(--size-1);
-  width: var(--size-mini-logo-width);
-  margin-top: var(--size-1);
-  background-color: var(--color-canvas-default);
-  background-size: auto 100%;
-  background-image: var(--logo-phoenix);
-  background-position: center;
-  background-repeat: no-repeat;
-}
 
 .phxprof-toolbar-clearer {
   clear: both;
@@ -709,7 +696,6 @@ div.phxprof-toolbar .phxprof-toolbar-panel a:hover {
 /* END Symfony Web Debug Toolbar */
 
 @media (prefers-reduced-motion: reduce) {
-  .phxprof-toolbar > .phxprof-minitoolbar,
   .phxprof-toolbar > .phxprof-toolbar-view {
     animation-delay: -1ms !important;
     animation-duration: 1ms !important;
