@@ -93,32 +93,28 @@ defmodule PhoenixProfiler.Plug do
 
   defp debug_toolbar_assets_tag(conn, profile, config) do
     try do
-      if Code.ensure_loaded?(PhoenixProfiler.ToolbarLive) do
-        toolbar_attrs =
-          case config[:toolbar_attrs] do
-            attrs when is_list(attrs) -> attrs
-            _ -> []
-          end
+      toolbar_attrs =
+        case config[:toolbar_attrs] do
+          attrs when is_list(attrs) -> attrs
+          _ -> []
+        end
 
-        attrs =
-          Keyword.merge(
-            toolbar_attrs,
-            id: "pwdt#{profile.token}",
-            class: "phxprof-toolbar",
-            role: "region",
-            name: "Phoenix Web Debug Toolbar"
-          )
+      attrs =
+        Keyword.merge(
+          toolbar_attrs,
+          id: "pwdt#{profile.token}",
+          class: "phxprof-toolbar",
+          role: "region",
+          name: "Phoenix Web Debug Toolbar"
+        )
 
-        PhoenixProfiler.ToolbarLive.toolbar(%{
-          conn: conn,
-          session: %{"_" => profile},
-          profile: profile,
-          toolbar_attrs: attrs
-        })
-        |> Phoenix.HTML.Safe.to_iodata()
-      else
-        []
-      end
+      PhoenixProfiler.ToolbarLive.toolbar(%{
+        conn: conn,
+        session: %{"_" => profile},
+        profile: profile,
+        toolbar_attrs: attrs
+      })
+      |> Phoenix.HTML.Safe.to_iodata()
     catch
       {kind, reason} ->
         IO.puts(Exception.format(kind, reason, __STACKTRACE__))
