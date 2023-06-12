@@ -6,8 +6,8 @@ defmodule PhoenixProfiler.ToolbarLive do
   require Logger
 
   alias PhoenixProfiler.Elements
-  alias PhoenixProfiler.ProfileStore
-  alias PhoenixProfiler.Routes
+  alias PhoenixProfiler.Profile
+  alias PhoenixProfiler.Server
 
   @toolbar_css Application.app_dir(:phoenix_profiler, "priv/static/toolbar.css")
                |> File.read!()
@@ -137,19 +137,17 @@ defmodule PhoenixProfiler.ToolbarLive do
   end
 
   @impl Phoenix.LiveView
-  def mount(_, %{"_" => %PhoenixProfiler.Profile{} = profile}, socket) do
+  def mount(_, %{"_" => %Profile{} = profile}, socket) do
     socket =
       socket
       |> assign_defaults()
       |> assign(:profile, profile)
 
     socket =
-      case ProfileStore.get(profile.token) do
+      case Server.get_profile(profile.token) do
         nil -> assign_error_toolbar(socket)
         remote_profile -> assign_toolbar(socket, remote_profile)
       end
-
-    socket = subscribe(socket)
 
     {:ok, socket, temporary_assigns: [exits: []]}
   end
@@ -206,7 +204,7 @@ defmodule PhoenixProfiler.ToolbarLive do
   defp apply_request(socket, profile) do
     %{conn: %Plug.Conn{} = conn} = profile
     router = conn.private[:phoenix_router]
-    {helper, plug, action} = Routes.info(conn)
+    {helper, plug, action} = PhoenixProfiler.Elements.Request.info(conn)
     socket = %{socket | private: Map.put(socket.private, :phoenix_router, router)}
 
     assign(socket, :request, %{
@@ -219,16 +217,6 @@ defmodule PhoenixProfiler.ToolbarLive do
       router_helper: helper,
       class: request_class(conn.status)
     })
-  end
-
-  defp apply_navigation(socket, %{router: router} = route) do
-    socket
-    |> update(:root_pid, fn _ -> route.root_pid end)
-    |> update(:request, fn req ->
-      {helper, plug, action} = Routes.info(router, route)
-
-      %{req | plug: inspect(plug), action: inspect(action), router_helper: helper}
-    end)
   end
 
   defp duration(duration) when is_integer(duration) do
@@ -262,94 +250,5 @@ defmodule PhoenixProfiler.ToolbarLive do
       code when code >= 500 and code < 600 -> :red
       _ -> nil
     end
-  end
-
-  defp subscribe(socket) do
-    if connected?(socket) do
-      subscribe(socket, socket.transport_pid)
-    else
-      socket
-    end
-  end
-
-  defp subscribe(socket, transport_pid) do
-    # todo: stop retrying after a resonable amount of time (proabably not a LiveView).
-    case PhoenixProfiler.Server.subscribe(transport_pid) do
-      {:ok, _token} -> :ok
-      :error -> Process.send_after(self(), {:subscribe, transport_pid}, 1000)
-    end
-
-    socket
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:subscribe, transport_pid}, socket) do
-    socket =
-      if socket.transport_pid == transport_pid,
-        do: subscribe(socket, transport_pid),
-        else: socket
-
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info(
-        {PhoenixProfiler.Server, _token,
-         {:telemetry, [:phoenix, :live_view, _, _] = event, _time, data}},
-        socket
-      ) do
-    [_, _, stage, action] = event
-
-    socket =
-      socket
-      |> maybe_apply_navigation(data)
-      |> apply_lifecycle(stage, action, data)
-      |> apply_event_duration(stage, action, data)
-
-    {:noreply, socket}
-  end
-
-  def handle_info(other, socket) do
-    Logger.debug("ToolbarLive received an unknown message: #{inspect(other)}")
-    {:noreply, socket}
-  end
-
-  defp maybe_apply_navigation(socket, data) do
-    if connected?(socket) and not is_nil(data.router) and
-         socket.assigns.root_pid != data.root_pid do
-      apply_navigation(socket, data)
-    else
-      socket
-    end
-  end
-
-  defp apply_lifecycle(socket, _stage, :exception, data) do
-    %{kind: kind, reason: reason, stacktrace: stacktrace} = data
-
-    exception = %{
-      ref: Phoenix.LiveView.Utils.random_id(),
-      reason: Exception.format(kind, reason, stacktrace),
-      at: Time.utc_now() |> Time.truncate(:second)
-    }
-
-    socket
-    |> update(:exits, &[exception | &1])
-    |> update(:exits_count, &(&1 + 1))
-  end
-
-  defp apply_lifecycle(socket, _stage, _action, _data) do
-    socket
-  end
-
-  defp apply_event_duration(socket, stage, :stop, %{duration: duration})
-       when stage in [:handle_event, :handle_params] do
-    update(socket, :durations, fn durations ->
-      durations = durations || %{total: nil, endpoint: nil, latest_event: nil}
-      %{durations | latest_event: duration(duration)}
-    end)
-  end
-
-  defp apply_event_duration(socket, _stage, _action, _measurements) do
-    socket
   end
 end

@@ -1,143 +1,26 @@
 defmodule PhoenixProfiler.Utils do
   @moduledoc false
   alias Phoenix.LiveView
-  alias PhoenixProfiler.Profile
-  alias PhoenixProfiler.Server
 
-  @default_profiler_link_base "/dashboard/_profiler"
+  @doc "Returns the owner pid of a given `conn` or `socket`."
+  def owner_pid(%Plug.Conn{} = conn), do: conn.owner
+  def owner_pid(%LiveView.Socket{} = socket), do: socket.transport_pid
 
-  @doc """
-  Mounts the profile if it has been enabled on the endpoint.
-  """
-  def maybe_mount_profile(%LiveView.Socket{} = socket) do
-    if LiveView.connected?(socket) and configured?(socket) do
-      enable_profiler(socket)
-    else
-      socket
-    end
-  end
+  @doc "Returns the endpoint for a given `conn` or `socket`."
+  def conn_or_socket_endpoint(%Plug.Conn{} = conn), do: conn.private.phoenix_endpoint
+  def conn_or_socket_endpoint(%LiveView.Socket{endpoint: endpoint}), do: endpoint
 
-  defp configured?(conn_or_socket) do
-    not is_nil(endpoint(conn_or_socket).config(:phoenix_profiler))
-  end
-
-  @doc """
-  Enables the profiler on a given `conn` or `socket`.
-
-  Raises if the profiler is not defined or is not started.
-  For a LiveView socket, raises if the socket is not connected.
-  """
-  def enable_profiler(conn_or_socket) do
-    endpoint = endpoint(conn_or_socket)
-    config = endpoint.config(:phoenix_profiler, [])
-    enable_profiler(conn_or_socket, endpoint, config, System.system_time())
-  end
-
-  @doc false
-  def enable_profiler(conn_or_socket, _endpoint, nil, _system_time) do
-    enable_profiler_error(conn_or_socket, :profiler_not_configured)
-  end
-
-  def enable_profiler(conn_or_socket, endpoint, config, system_time)
-      when is_atom(endpoint) and is_list(config) and is_integer(system_time) do
-    with :ok <- check_requires_profile(conn_or_socket),
-         :ok <- maybe_check_socket_connection(conn_or_socket) do
-      conn_or_socket
-      |> new_profile(endpoint, config, system_time)
-      |> start_profiling(config)
-      |> telemetry_execute(:start, %{system_time: system_time})
-    else
-      {:error, reason} -> enable_profiler_error(conn_or_socket, reason)
-    end
-  end
-
-  defp check_requires_profile(conn_or_socket) do
-    case conn_or_socket.private do
-      %{:phoenix_profiler => %Profile{}} ->
-        {:error, :profile_already_exists}
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp maybe_check_socket_connection(%Plug.Conn{}), do: :ok
-
-  defp maybe_check_socket_connection(%LiveView.Socket{} = socket) do
-    if LiveView.connected?(socket) do
-      :ok
-    else
-      {:error, :waiting_for_connection}
-    end
-  end
-
-  defp new_profile(conn_or_socket, endpoint, config, system_time) do
-    profiler_base_url = profiler_base_url(endpoint, config)
-
-    {:ok, token} = Server.make_observable(owner_pid(conn_or_socket), endpoint)
-    profile = Profile.new(endpoint, token, profiler_base_url, system_time)
-
-    put_private(conn_or_socket, :phoenix_profiler, profile)
-  end
-
-  defp owner_pid(%Plug.Conn{} = conn), do: conn.owner
-  defp owner_pid(%LiveView.Socket{} = socket), do: socket.transport_pid
-
-  defp profiler_base_url(endpoint, config) do
-    endpoint.url() <> profiler_link_base(config[:profiler_link_base])
-  end
-
-  defp profiler_link_base(path) when is_binary(path) and path != "", do: path
-  defp profiler_link_base(_), do: @default_profiler_link_base
-
-  defp start_profiling(conn_or_socket, config) do
-    # disable profiling if disabled on the endpoint config
-    if config[:enable] == false, do: Server.profiling(false)
+  @doc "Get the config of a given `conn` or `socket`."
+  def conn_or_socket_config(conn_or_socket) do
     conn_or_socket
+    |> conn_or_socket_endpoint()
+    |> profiler_config()
   end
 
-  # Returns the endpoint for a given `conn` or `socket`.
-  defp endpoint(%Plug.Conn{} = conn), do: conn.private.phoenix_endpoint
-  defp endpoint(%LiveView.Socket{endpoint: endpoint}), do: endpoint
-
-  defp enable_profiler_error(conn_or_socket, :profile_already_exists) do
-    Server.profiling(true)
-    conn_or_socket
+  @doc "Get the config of a given Phoenix endpoint."
+  def profiler_config(endpoint) do
+    endpoint.config(:phoenix_profiler, [])
   end
-
-  defp enable_profiler_error(%LiveView.Socket{}, :waiting_for_connection) do
-    raise """
-    attempted to enable profiling on a disconnected socket
-
-    In your LiveView mount callback, do the following:
-
-        socket =
-          if connected?(socket) do
-            PhoenixProfiler.enable(socket)
-          else
-            socket
-          end
-
-    """
-  end
-
-  defp enable_profiler_error(_, :profiler_not_configured) do
-    raise "attempted to enable profiling but no profiler is configured on the endpoint"
-  end
-
-  @doc """
-  Disables the profiler on a given `conn` or `socket`.
-
-  If a profile is not present on the data structure, this function has no effect.
-  """
-  def disable_profiler(%{__struct__: kind} = conn_or_socket)
-      when kind in [Plug.Conn, LiveView.Socket] do
-    _ = Server.profiling(false)
-    conn_or_socket
-  end
-
-  def disable_profiler(%Plug.Conn{} = conn), do: conn
-  def disable_profiler(%LiveView.Socket{} = socket), do: socket
 
   @doc """
   Assigns a new private key and value in the socket.
@@ -153,44 +36,11 @@ defmodule PhoenixProfiler.Utils do
   # Unique ID generation
   # Copyright (c) 2013 Plataformatec.
   # https://github.com/elixir-plug/plug/blob/fb6b952cf93336dc79ec8d033e09a424d522ce56/lib/plug/request_id.ex
-  @doc false
-  def random_unique_id do
-    binary = <<
-      System.system_time(:nanosecond)::64,
-      :erlang.phash2({node(), self()}, 16_777_216)::24,
-      :erlang.unique_integer()::32
-    >>
+  def generate_token do
+    binary =
+      <<System.system_time(:nanosecond)::64, :erlang.phash2({node(), self()}, 16_777_216)::24,
+        :erlang.unique_integer()::32>>
 
     Base.url_encode64(binary)
-  end
-
-  @doc """
-  Returns a map of system version metadata.
-  """
-  def system do
-    for app <- [:otp, :elixir, :phoenix, :phoenix_live_view, :phoenix_profiler], into: %{} do
-      {app, version(app)}
-    end
-  end
-
-  defp version(:elixir), do: System.version()
-  defp version(:otp), do: System.otp_release()
-
-  defp version(app) when is_atom(app) do
-    Application.spec(app)[:vsn]
-  end
-
-  @doc false
-  def on_send_resp(conn, %Profile{} = profile) do
-    duration = System.monotonic_time() - profile.start_time
-    telemetry_execute(conn, :stop, %{duration: duration})
-  end
-
-  defp telemetry_execute(%LiveView.Socket{} = socket, _, _), do: socket
-
-  defp telemetry_execute(%Plug.Conn{} = conn, action, measurements)
-       when action in [:start, :stop] do
-    :telemetry.execute([:phxprof, :plug, action], measurements, %{conn: conn})
-    conn
   end
 end

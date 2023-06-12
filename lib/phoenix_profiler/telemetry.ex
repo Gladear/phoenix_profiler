@@ -34,7 +34,6 @@ defmodule PhoenixProfiler.Telemetry do
   def collect(_, [:phxprof, :plug, :stop], measures, %{conn: conn}) do
     {:keep,
      %{
-       at: conn.private.phoenix_profiler.system_time,
        conn: prune_values(conn),
        metrics: %{
          memory: collect_memory(conn.owner),

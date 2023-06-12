@@ -5,9 +5,7 @@ defmodule PhoenixProfiler.Profile do
     :endpoint,
     :start_time,
     :system,
-    :system_time,
-    :token,
-    :url
+    :token
   ]
 
   @type system :: %{
@@ -22,29 +20,33 @@ defmodule PhoenixProfiler.Profile do
           :endpoint => module(),
           :token => String.t(),
           :start_time => integer(),
-          :system => system(),
-          :system_time => integer(),
-          :url => String.t()
+          :system => system()
         }
 
   @doc """
   Returns a new profile.
   """
-  def new(endpoint, token, base_url, system_time)
-      when is_atom(endpoint) and is_binary(token) and is_binary(base_url) and
-             is_integer(system_time) do
+  def new(endpoint, token) when is_atom(endpoint) and is_binary(token) do
     %__MODULE__{
-      endpoint: endpoint,
-      start_time: System.monotonic_time(),
-      system: PhoenixProfiler.system(),
-      system_time: system_time,
       token: token,
-      url: build_url(endpoint, token, base_url)
+      endpoint: endpoint,
+      system: system(),
+      start_time: System.monotonic_time()
     }
   end
 
-  defp build_url(endpoint, token, base_url) do
-    params = %{nav: inspect(endpoint), panel: :request, token: token}
-    base_url <> "?" <> URI.encode_query(params)
+  # Returns a map of system version metadata.
+  defp system do
+    system_versions = %{
+      elixir: System.version(),
+      otp: System.otp_release()
+    }
+
+    deps_versions =
+      for app <- [:phoenix, :phoenix_live_view, :phoenix_profiler], into: %{} do
+        {app, Application.spec(app)[:vsn]}
+      end
+
+    Map.merge(system_versions, deps_versions)
   end
 end
