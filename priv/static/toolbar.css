@@ -24,7 +24,7 @@
   --size-toolbar: var(--size-11);
 }
 
-/* Show and hide transitions */
+/* Miniaturized toolbar */
 
 .phxprof-minitoolbar {
   position: fixed;
@@ -39,7 +39,7 @@
   background-color: var(--color-canvas-default);
   z-index: var(--layer-top);
   transform: translateY(100%);
-  transition: transform 1s ease;
+  transition: transform 0.5s ease;
 }
 
 .phxprof-toolbar.miniaturized > .phxprof-minitoolbar {
@@ -57,675 +57,137 @@
   cursor: pointer;
 }
 
-.phxprof-toolbar > .phxprof-toolbar-view {
-  -webkit-transition: height 1s ease;
-  -moz-transition: height 1s ease;
-  -o-transition: height 1s ease;
-  -ms-transition: height 1s ease;
-  transition: height 1s ease;
-}
-
-.phxprof-toolbar.miniaturized > .phxprof-toolbar-view {
-  height: var(--size-0);
-}
-
-/*! Symfony Web Debug Toolbar v5.3.9 | MIT License | https://github.com/symfony/symfony/blob/842ecc50f04ea0067ac300e2396a391dff687498/src/Symfony/Bundle/WebProfilerBundle/Resources/views/Profiler/toolbar.css.twig */
-
-
-.phxprof-toolbar-clearer {
-  clear: both;
-  height: var(--size-toolbar);
-}
-
-.phxprof-display-none {
-  display: none;
-}
-
-/* toolbar reset */
-.phxprof-toolbar-view * {
-  border: 0px none;
-  border-radius: unset;
-  box-sizing: content-box;
-  vertical-align: baseline;
-  letter-spacing: normal;
-  margin: 0;
-  padding: 0;
-  width: auto;
-}
+/* Toolbar (container) */
 
 .phxprof-toolbar-view {
-  height: var(--size-toolbar);
-  background-color: var(--color-canvas-default);
-  bottom: 0;
-  box-shadow: none;
-  color: #EEE;
-  font: var(--size-font) var(--font-family-default);
-  left: 0;
-  line-height: var(--leading-lg);
-  margin: 0;
-  padding: 0 var(--size-toolbar) 0 0;
   position: fixed;
   right: 0;
-  text-align: left;
-  text-transform: none;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  box-sizing: content-box;
+  background-color: var(--color-canvas-default);
+  font-size: 0.9rem;
   z-index: var(--layer-top);
-  direction: ltr;
   /* neutralize the aliasing defined by external CSS styles */
   -webkit-font-smoothing: subpixel-antialiased;
   -moz-osx-font-smoothing: auto;
+  transition: transform 0.5s ease;
 }
 
-.phxprof-toolbar-view abbr {
-  border: dashed var(--color-stroke);
-  border-width: 0 0 var(--size-px);
+.phxprof-toolbar.miniaturized > .phxprof-toolbar-view {
+  transform: translateY(100%);
 }
 
-.phxprof-toolbar-view svg,
-.phxprof-toolbar-view img {
-  height: var(--size-icon);
-  width: var(--size-icon);
-  display: inline-block;
+.phxprof-toolbar-view a {
+  color: var(--color-link);
 }
+
+/* Toolbar (utilities) */
+
+.phxprof-toolbar-spacer {
+  flex-grow: 1;
+}
+
+/* Hide button */
 
 .phxprof-toolbar-view .hide-button {
   background: var(--color-canvas-secondary);
-  display: block;
-  position: absolute;
-  top: 0;
-  right: 0;
   width: var(--size-toolbar);
   height: var(--size-toolbar);
-  cursor: pointer;
-  text-align: center;
-  border: none;
-  border-radius: 0px;
-  margin: 0;
-  padding: 0;
 }
 
 .phxprof-toolbar-view .hide-button svg {
-  max-height: var(--size-5);
-  margin-top: var(--size-3);
+  height: 1.25rem;
+  margin: auto;
+  color: var(--color-fg-default);
 }
 
-.phxprof-toolbar-view .hide-button svg path {
-  fill: var(--color-fg-default);
-}
+/* Panel */
 
-.phxprof-toolbar-panel {
-  cursor: default;
-  display: block;
-  float: left;
+.phxprof-element {
+  position: relative;
+  display: flex;
   height: var(--size-toolbar);
-  margin-right: 0;
-  white-space: nowrap;
-  max-width: 20%;
-}
-
-.phxprof-toolbar-panel>a,
-.phxprof-toolbar-panel>a:hover {
-  display: block;
-  text-decoration: none;
-  background-color: transparent;
-  color: inherit;
-}
-
-.phxprof-toolbar-panel span {
-  display: inline-block;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-value {
+  max-width: 7.5rem;
   color: var(--color-fg-default);
-  font-size: var(--size-font);
-  line-height: var(--size-toolbar);
-  padding: var(--size-0);
 }
 
-.phxprof-toolbar-panel .phxprof-toolbar-label,
-.phxprof-toolbar-panel .phxprof-toolbar-class-separator {
-  color: var(--color-stroke);
-  font-size: var(--size-font);
+.phxprof-element-status {
+  padding: 0.25rem 0.75rem;
+  line-height: 2.25rem;
 }
 
-.phxprof-toolbar-panel .phxprof-toolbar-info {
-  border-collapse: collapse;
-  display: table;
-  z-index: var(--layer-top);
-}
-
-.phxprof-toolbar-panel hr {
-  border-top: var(--size-px) solid var(--color-stroke);
-  margin: var(--size-1) 0;
-  padding-top: var(--size-1);
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-item {
-  /* this 'border-bottom' trick is needed because 'margin-bottom' doesn't work for table rows */
-  border-bottom: solid transparent var(--size-1);
-  display: table-row;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-group {
-  margin-bottom: var(--size-1);
-  padding-bottom: var(--size-half);
-  border-bottom: var(--size-px) solid var(--color-stroke);
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-group:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-item .phxprof-toolbar-status {
-  margin-bottom: 0;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-item .phxprof-toolbar-status+.phxprof-toolbar-status {
-  margin-left: var(--size-1);
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-item:last-child {
-  margin-bottom: 0;
-}
-
-div.phxprof-toolbar .phxprof-toolbar-panel .phxprof-toolbar-info-item a {
-  color: var(--color-link);
-  text-decoration: underline;
-}
-
-div.phxprof-toolbar .phxprof-toolbar-panel a:hover {
-  text-decoration: none;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-item b {
-  color: var(--color-fg-secondary);
-  display: table-cell;
-  font-size: var(--size-3);
-  padding: var(--size-1) var(--size-2) var(--size-1) 0;
-}
-
-.phxprof-toolbar-panel:not(.phxprof-toolbar-panel-dump) .phxprof-toolbar-info-item span,
-.phxprof-toolbar-panel:not(.phxprof-toolbar-panel-exits) .phxprof-toolbar-info-item span {
-  color: var(--canvas-fg-default);
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info-item span {
-  font-size: var(--size-3);
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info {
-  background-color: var(--color-canvas-secondary);
-  bottom: var(--size-toolbar);
-  color: var(--color-fg-default);
-  display: none;
-  padding: var(--size-2) 0;
-  position: absolute;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-info:empty {
-  visibility: hidden;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-status {
-  display: inline-block;
-  color: var(--color-fg-default);
-  background-color: var(--oc-gray-7);
-  padding: var(--size-1) var(--size-2);
-  margin-bottom: var(--size-1);
-  vertical-align: middle;
-  min-width: var(--size-5);
-  min-height: var(--size-5);
-  text-align: center;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-status-green {
+.phxprof-element-status-green {
   background-color: var(--color-success);
 }
 
-.phxprof-toolbar-panel .phxprof-toolbar-status-red {
-  background-color: var(--color-error);
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-status-yellow {
+.phxprof-element-status-yellow {
   background-color: var(--color-warn);
 }
 
-.phxprof-toolbar-panel.phxprof-toolbar-status-green {
-  background-color: var(--color-success);
-  color: var(--color-fg-default);
-}
-
-.phxprof-toolbar-panel.phxprof-toolbar-status-red {
+.phxprof-element-status-red {
   background-color: var(--color-error);
-  color: var(--color-fg-default);
 }
 
-.phxprof-toolbar-panel.phxprof-toolbar-status-yellow {
-  background-color: var(--color-warn);
-  color: var(--color-fg-default);
+.phxprof-element-phoenix-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.phxprof-toolbar-panel-request .phxprof-toolbar-status {
-  color: var(--color-fg-default);
-  display: inline-block;
-  font-size: 14px;
-  height: var(--size-toolbar);
-  line-height: var(--size-toolbar);
-  padding: 0 var(--size-3);
-}
-
-.phxprof-toolbar-panel-request .phxprof-toolbar-info-item a {
-  background-color: transparent;
-  text-decoration: none;
-}
-
-.phxprof-toolbar-panel-request .phxprof-toolbar-info-item a:hover {
-  text-decoration: underline;
-}
-
-.phxprof-toolbar-panel-request .phxprof-toolbar-redirection-status {
-  font-weight: normal;
-  padding: 2px 4px;
-  line-height: 18px;
-}
-
-.phxprof-toolbar-panel-request .phxprof-toolbar-info-item span.phxprof-toolbar-redirection-method {
-  font-size: 12px;
-  height: 17px;
-  line-height: 17px;
-  margin-right: 5px;
-}
-
-.phxprof-toolbar-panel-ajax .phxprof-toolbar-icon {
-  cursor: pointer;
-}
-
-.phxprof-toolbar-status-green .phxprof-toolbar-label,
-.phxprof-toolbar-status-yellow .phxprof-toolbar-label,
-.phxprof-toolbar-status-red .phxprof-toolbar-label {
-  color: var(--color-fg-default);
-}
-
-.phxprof-toolbar-status-green svg path,
-.phxprof-toolbar-status-green svg .phxprof-svg-path,
-.phxprof-toolbar-status-red svg path,
-.phxprof-toolbar-status-red svg .phxprof-svg-path,
-.phxprof-toolbar-status-yellow svg path,
-.phxprof-toolbar-status-yellow svg .phxprof-svg-path {
-  fill: var(--color-fg-default);
-}
-
-.phxprof-toolbar-panel-config svg path,
-.phxprof-toolbar-panel-config svg .phxprof-svg-path {
-  fill: var(--color-stroke);
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-icon {
-  display: block;
-  height: var(--size-toolbar);
-  line-height: var(--size-10);
-  padding: 0 var(--size-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-variant-numeric: tabular-nums;
-}
-
-.phxprof-toolbar-panel-request .phxprof-toolbar-icon {
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-icon img,
-.phxprof-toolbar-panel .phxprof-toolbar-icon svg {
-  border-width: 0;
-  position: relative;
-  top: var(--size-2);
-  vertical-align: baseline;
-}
-
-.phxprof-toolbar-panel .phxprof-toolbar-icon img+span,
-.phxprof-toolbar-panel .phxprof-toolbar-icon svg+span {
-  margin-left: var(--size-1);
-}
-
-.phxprof-toolbar-panel-config .phxprof-toolbar-icon .phxprof-toolbar-value {
-  margin-left: var(--size-1);
-  vertical-align: top;
-}
-
-.phxprof-toolbar-panel:hover,
-.phxprof-toolbar-panel.hover {
-  position: relative;
-}
-
-.phxprof-toolbar-panel:hover .phxprof-toolbar-icon,
-.phxprof-toolbar-panel.hover .phxprof-toolbar-icon {
-  background-color: var(--color-canvas-secondary);
-  position: relative;
-  z-index: 10002;
-}
-
-.phxprof-toolbar-panel-ajax.hover .phxprof-toolbar-info {
-  z-index: 10001;
-}
-
-.phxprof-toolbar-panel:hover .phxprof-toolbar-info,
-.phxprof-toolbar-panel.hover .phxprof-toolbar-info {
-  display: block;
-  padding: var(--size-3);
-  max-width: var(--width-lg);
-  max-height: var(--width-lg);
-  word-wrap: break-word;
-  overflow: hidden;
-  overflow-y: auto;
-}
-
-.phxprof-toolbar-info-item b.phxprof-toolbar-ajax-info {
-  color: #F5F5F5;
-}
-
-.phxprof-toolbar-ajax-requests {
-  table-layout: auto;
-  width: 100%;
-}
-
-.phxprof-toolbar-ajax-requests td {
-  background-color: #444;
-  border-bottom: 1px solid var(--color-stroke);
-  color: #F5F5F5;
-  font-size: 12px;
-  padding: 4px;
-}
-
-.phxprof-toolbar-ajax-requests tr:last-child td {
-  border-bottom: 0;
-}
-
-.phxprof-toolbar-ajax-requests th {
-  background-color: #222;
-  border-bottom: 0;
-  color: #AAA;
-  font-size: 11px;
-  padding: 4px;
-}
-
-.phxprof-ajax-request-url {
-  max-width: 250px;
-  line-height: 9px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.phxprof-toolbar-ajax-requests .phxprof-ajax-request-url a {
-  text-decoration: none;
-}
-
-.phxprof-toolbar-ajax-requests .phxprof-ajax-request-url a:hover {
-  text-decoration: underline;
-}
-
-.phxprof-ajax-request-duration {
-  text-align: right;
-}
-
-.phxprof-ajax-request-loading {
-  animation: phxprof-blink .5s ease-in-out infinite;
-}
-
-@keyframes phxprof-blink {
-  0% {
-    background: #222;
-  }
-
-  50% {
-    background: #444;
-  }
-
-  100% {
-    background: #222;
-  }
-}
-
-.phxprof-toolbar-panel.phxprof-toolbar-panel-dump .phxprof-toolbar-info {
-  max-width: none;
-  width: 100%;
-  position: fixed;
-  box-sizing: border-box;
-  left: 0;
-}
-
-.phxprof-toolbar-panel-dump pre.phxprof-dump {
-  background-color: #222;
-  border-color: #777;
-  border-radius: 0;
-  margin: 6px 0 12px 0;
-}
-
-.phxprof-toolbar-panel-dump pre.phxprof-dump:last-child {
-  margin-bottom: 0;
-}
-
-.phxprof-toolbar-panel-dump pre.phxprof-dump .phxprof-dump-search-wrapper {
-  margin-bottom: 5px;
-}
-
-.phxprof-toolbar-panel-dump pre.phxprof-dump span.phxprof-dump-search-count {
-  color: #333;
-  font-size: 12px;
-}
-
-.phxprof-toolbar-panel-dump .phxprof-toolbar-info-item {
-  display: block;
-}
-
-.phxprof-toolbar-panel-dump .phxprof-toolbar-info-item .phxprof-toolbar-module-function {
-  color: var(--color-canvas-secondary);
-  margin-left: var(--size-1);
-}
-
-.phxprof-toolbar-panel-dump .phxprof-toolbar-info img {
-  display: none;
-}
-
-/* Exits Panel */
-
-.phxprof-toolbar-panel.phxprof-toolbar-panel-exits .phxprof-toolbar-info {
-  max-width: none;
-  width: 100%;
-  position: fixed;
-  box-sizing: border-box;
-  left: 0;
-  max-height: var(--width-md);
-  overflow-y: scroll;
-}
-
-.phxprof-toolbar-panel-exits .phxprof-toolbar-info-group {
-  display: block;
-}
-
-.phxprof-toolbar-panel-exits .phxprof-toolbar-info-item,
-.phxprof-toolbar-panel-exits .phxprof-toolbar-info-item b {
-  display: block;
-}
-
-.phxprof-toolbar-panel-dump .phxprof-toolbar-info pre,
-.phxprof-toolbar-panel-exits .phxprof-toolbar-info span pre {
-  background-color: var(--color-canvas-default);
-  color: var(--color-fg-secondary);
-  overflow-x: hidden;
-  padding: var(--size-2);
-  white-space: pre-wrap;
-  max-width: --var(--width-lg);
-}
-
-/* Responsive Design */
-.phxprof-toolbar-icon .phxprof-toolbar-label,
-.phxprof-toolbar-icon .phxprof-toolbar-value {
-  display: none;
-}
-
-.phxprof-toolbar-panel-config .phxprof-toolbar-icon .phxprof-toolbar-label {
-  display: inline-block;
-  margin-top: var(--size-2);
-}
-
-/* Load Phoenix Logo from CSS variable */
-.phxprof-toolbar-panel-config > .phxprof-toolbar-icon > .phxprof-toolbar-label:before {
+.phxprof-element-phoenix-logo::before {
   content: '';
-  display: block;
-  height: var(--size-logo-height);
-  width: var(--size-logo-width);
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.75rem;
   background-size: auto 100%;
   background-image: var(--logo-phoenix);
-  background-position: right 0;
+  background-position: center;
   background-repeat: no-repeat;
 }
 
-@media (min-width: 768px) {
-
-  .phxprof-toolbar-icon .phxprof-toolbar-label,
-  .phxprof-toolbar-icon .phxprof-toolbar-value {
-    display: inline;
-  }
-
-  .phxprof-toolbar-panel .phxprof-toolbar-icon img,
-  .phxprof-toolbar-panel .phxprof-toolbar-icon svg {
-    top: var(--size-1);
-  }
-
-  .phxprof-toolbar-panel-duration .phxprof-toolbar-icon svg,
-  .phxprof-toolbar-panel-memory .phxprof-toolbar-icon svg {
-    display: none;
-  }
-
-  .phxprof-toolbar-panel-duration .phxprof-toolbar-icon svg+span,
-  .phxprof-toolbar-panel-memory .phxprof-toolbar-icon svg+span {
-    margin-left: 0;
-  }
-
-  .phxprof-toolbar-panel .phxprof-toolbar-icon {
-    padding: 0 var(--size-3);
-  }
-
-  .phxprof-toolbar-panel-duration .phxprof-toolbar-icon {
-    padding-right: var(--size-1);
-  }
-
-  .phxprof-toolbar-panel-memory .phxprof-toolbar-icon {
-    padding-left: var(--size-1);
-  }
-
-  .phxprof-toolbar-panel-request .phxprof-toolbar-icon {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .phxprof-toolbar-panel-request .phxprof-toolbar-label {
-    margin-left: var(--size-1);
-  }
-
-  .phxprof-toolbar-panel-request .phxprof-toolbar-status+svg {
-    margin-left: var(--size-1);
-  }
-
-  .phxprof-toolbar-panel-request .phxprof-toolbar-icon svg+.phxprof-toolbar-label {
-    margin-left: 0;
-  }
-
-  .phxprof-toolbar-panel-request .phxprof-toolbar-label+.phxprof-toolbar-value {
-    margin-right: var(--size-2);
-  }
-
-  .phxprof-toolbar-panel-request:hover .phxprof-toolbar-info {
-    max-width: none;
-  }
-
-  .phxprof-toolbar-panel .phxprof-toolbar-info-item b {
-    font-size: var(--size-3);
-  }
-
-  .phxprof-toolbar-panel .phxprof-toolbar-info-item span {
-    font-size: var(--size-3);
-  }
-
-  .phxprof-toolbar-panel-right {
-    float: right;
-    margin-left: 0;
-    margin-right: 0;
-  }
+.phxprof-element-item {
+  padding: 0.25rem 0.5rem;
+  line-height: 2.25rem;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
 }
 
-/***** Error Toolbar *****/
-.phxprof-error-toolbar .phxprof-toolbar-view {
-  background: var(--color-canvas-default);
-  color: var(--color-fg-default);
-  font: var(--size-font)/var(--size-toolbar) var(--font-family-default);
-  height: var(--size-toolbar);
-  padding: 0 var(--size-4);
-  text-align: left;
+.phxprof-element:hover .phxprof-element-item {
+  background-color: var(--color-canvas-secondary);
 }
 
-.phxprof-error-toolbar .phxprof-toolbar-view svg {
-  height: auto;
+.phxprof-toolbar-label {  
+  color: var(--color-stroke);
 }
 
-.phxprof-error-toolbar .phxprof-toolbar-view a {
-  color: var(--color-link);
-  margin-left: var(--size-1);
-  text-decoration: underline;
+.phxprof-toolbar-details {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  display: none;
+  grid-template-columns: repeat(2, auto);
+  gap: 0.5rem 1rem;
+  width: max-content;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  background-color: var(--color-canvas-secondary);
 }
 
-.phxprof-error-toolbar .phxprof-toolbar-view a:hover {
-  text-decoration: none;
+.phxprof-element:hover .phxprof-toolbar-details {
+  display: grid;
 }
 
-.phxprof-error-toolbar .phxprof-toolbar-view .phxprof-toolbar-icon {
-  float: left;
-  padding: var(--size-1) 0;
-  margin-right: var(--size-2);
+.phxprof-item-label {
+  color: var(--color-fg-secondary);
+  font-weight: bold;
 }
 
-/***** Media query print: Do not print the Toolbar. *****/
+/* When printing, hide the profiler */
+
 @media print {
   .phxprof-toolbar {
     display: none !important;
   }
 }
-
-/* END Symfony Web Debug Toolbar */
-
-@media (prefers-reduced-motion: reduce) {
-  .phxprof-toolbar > .phxprof-toolbar-view {
-    animation-delay: -1ms !important;
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    background-attachment: initial !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0s !important;
-    transition-delay: 0s !important;
-  }
-}
-
-.phxprof-toolbar-panel-config .phxprof-toolbar-info-item.attribution b,
-.phxprof-toolbar-panel-config .phxprof-toolbar-info-item.attribution span {
-  font-size: var(--size-3);
-}
-
-.phxprof-toolbar-panel-config .phxprof-toolbar-info-item.attribution svg {
-  width: var(--size-3);
-  height: var(--size-3);
-}
-.phxprof-toolbar-panel-config .phxprof-toolbar-info-item.attribution svg path {
-  fill: var(--oc-violet-4);
-}
-
-.phxprof-toolbar-panel-config .phxprof-toolbar-info-item.attribution a {
-  text-decoration: none !important;
-  color: var(--color-fg-default) !important;
-}
-
-
-
-/*! Additional Icons from Heroicons v1.0.0 | MIT License | https://github.com/tailwindlabs/heroicons */
-/*! Additional Icons from Tabler Icons v1.41.2 | MIT License | https://github.com/tabler/tabler-icons

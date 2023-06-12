@@ -27,7 +27,6 @@ defmodule PhoenixProfiler.ToolbarLive do
         <button class="show-button" type="button" id={"phxprof-toolbar-show-#{@profile.token}"} title="Show Toolbar" accesskey="D" aria-expanded="true" aria-controls={"phxprof-toolbar-main-#{@profile.token}"}>
         </button>
       </div>
-      <div class="phxprof-toolbar-clearer" style="display: block;"></div>
       <%= live_render(@conn, __MODULE__, session: @session) %>
     </div>
     <script><%= Phoenix.HTML.raw(@toolbar_js) %></script>
@@ -39,68 +38,66 @@ defmodule PhoenixProfiler.ToolbarLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="phxprof-toolbar-container">
-      <Elements.Request.render request={@request} />
-      <Elements.RequestDuration.render durations={@durations} />
-      <Elements.MemoryUsage.render memory={@memory} />
-      <Elements.LiveExceptions.render exits={@exits} />
+    <Elements.Request.render request={@request} />
+    <Elements.RequestDuration.render durations={@durations} />
+    <Elements.MemoryUsage.render memory={@memory} />
+    <Elements.LiveExceptions.render exits={@exits} />
 
-      <.profile_panel profile={@profile} />
-      <.hide_button token={@profile.token} />
-    </div>
+    <div class="phxprof-toolbar-spacer" />
+
+    <.profile_panel profile={@profile} />
+    <.hide_button token={@profile.token} />
     """
   end
 
   defp profile_panel(assigns) do
     ~H"""
-    <div class="phxprof-toolbar-panel phxprof-toolbar-panel-config phxprof-toolbar-panel-right" aria-label="Config">
-      <div class="phxprof-toolbar-icon">
-        <div class="phxprof-toolbar-label"></div>
-        <div class="phxprof-toolbar-value"><%= @profile.system.phoenix %></div>
+    <div class="phxprof-element" aria-label="Config">
+      <div class="phxprof-element-item phxprof-element-phoenix-logo">
+        <%= @profile.system.phoenix %>
       </div>
 
-      <div class="phxprof-toolbar-info" style="right: 36px;">
-        <div class="phxprof-toolbar-info-group">
-          <div class="phxprof-toolbar-info-item">
-            <b>Profiler Token</b>
-            <span><%= @profile.token %></span>
-          </div>
-        </div>
+      <div class="phxprof-toolbar-details" style="left: auto; right: 0px">
+        <span class="phxprof-item-label">Profiler Token</span>
+        <span class="phxprof-item-value"><%= @profile.token %></span>
 
-        <div class="phxprof-toolbar-info-group">
-          <div class="phxprof-toolbar-info-item">
-            <b>LiveView Version</b><span><a href={"https://hexdocs.pm/phoenix_live_view/#{@profile.system.phoenix_live_view}/"}><%= @profile.system.phoenix_live_view %></a></span>
-          </div>
-          <div class="phxprof-toolbar-info-item">
-            <b>Elixir Version</b>
-            <span><a href={"https://hexdocs.pm/elixir/#{@profile.system.elixir}/"}><%= @profile.system.elixir %></a></span>
-          </div>
-          <div class="phxprof-toolbar-info-item">
-            <b>OTP Release</b>
-            <span><a href="https://erlang.org/erldoc"><%= @profile.system.otp %></a></span>
-          </div>
-        </div>
+        <span class="phxprof-item-label">LiveView Version</span>
+        <span class="phxprof-item-value">
+          <a href={"https://hexdocs.pm/phoenix_live_view/#{@profile.system.phoenix_live_view}/"}>
+            <%= @profile.system.phoenix_live_view %>
+          </a>
+        </span>
 
-        <div class="phxprof-toolbar-info-group">
-          <div class="phxprof-toolbar-info-item">
-            <b>Resources</b>
-            <span><a href={"https://hexdocs.pm/phoenix/#{@profile.system.phoenix}"}>Read Phoenix <%= @profile.system.phoenix %> Docs</a></span>
-          </div>
-          <div class="phxprof-toolbar-info-item">
-            <b>Help</b>
-            <span><a href="https://hexdocs.pm/phoenix/community.html">Phoenix Community</a></span>
-          </div>
-        </div>
-        <div class="phxprof-toolbar-info-group">
-          <div class="phxprof-toolbar-info-item">
-            <b>Toolbar Version</b>
-            <span><a href={"https://hexdocs.pm/phoenix_profiler/#{@profile.system.phoenix_profiler}"}><%= @profile.system.phoenix_profiler %></a></span>
-          </div>
-          <div class="phxprof-toolbar-info-item attribution">
-            <b>Made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg> by</b>
-            <span><a href="https://github.com/sponsors/mcrumm">@mcrumm</a></span>
-          </div>
-        </div>
+        <span class="phxprof-item-label">Elixir Version</span>
+        <span class="phxprof-item-value">
+          <a href={"https://hexdocs.pm/elixir/#{@profile.system.elixir}/"}>
+            <%= @profile.system.elixir %>
+          </a>
+        </span>
+
+        <span class="phxprof-item-label">OTP Release</span>
+        <span class="phxprof-item-value">
+          <a href="https://erlang.org/erldoc"><%= @profile.system.otp %></a>
+        </span>
+
+        <span class="phxprof-item-label">Resources</span>
+        <span class="phxprof-item-value">
+          <a href={"https://hexdocs.pm/phoenix/#{@profile.system.phoenix}"}>
+            Read Phoenix <%= @profile.system.phoenix %> Docs
+          </a>
+        </span>
+
+        <span class="phxprof-item-label">Help</span>
+        <span class="phxprof-item-value">
+          <a href="https://hexdocs.pm/phoenix/community.html">Phoenix Community</a>
+        </span>
+
+        <span class="phxprof-item-label">Toolbar version</span>
+        <span class="phxprof-item-value">
+          <a href={"https://hexdocs.pm/phoenix_profiler/#{@profile.system.phoenix_profiler}"}>
+            <%= @profile.system.phoenix_profiler %>
+          </a>
+        </span>
       </div>
     </div>
     """
