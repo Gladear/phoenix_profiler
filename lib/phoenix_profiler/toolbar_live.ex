@@ -24,13 +24,25 @@ defmodule PhoenixProfiler.ToolbarLive do
     <!-- START Phoenix Web Debug Toolbar -->
     <div {@toolbar_attrs}>
       <div class="phxprof-minitoolbar">
-        <button class="show-button" type="button" id={"phxprof-toolbar-show-#{@profile.token}"} title="Show Toolbar" accesskey="D" aria-expanded="true" aria-controls={"phxprof-toolbar-main-#{@profile.token}"}>
+        <button
+          class="show-button"
+          type="button"
+          id={"phxprof-toolbar-show-#{@profile.token}"}
+          title="Show Toolbar"
+          accesskey="D"
+          aria-expanded="true"
+          aria-controls={"phxprof-toolbar-main-#{@profile.token}"}
+        >
         </button>
       </div>
       <%= live_render(@conn, __MODULE__, session: @session) %>
     </div>
-    <script><%= Phoenix.HTML.raw(@toolbar_js) %></script>
-    <style type="text/css"><%= Phoenix.HTML.raw(@toolbar_css) %></style>
+    <script>
+      <%= Phoenix.HTML.raw(@toolbar_js) %>
+    </script>
+    <style type="text/css">
+      <%= Phoenix.HTML.raw(@toolbar_css) %>
+    </style>
     <!-- END Phoenix Web Debug Toolbar -->
     """
   end
@@ -105,9 +117,20 @@ defmodule PhoenixProfiler.ToolbarLive do
 
   defp hide_button(assigns) do
     ~H"""
-    <button class="hide-button" type="button" title="Hide Toolbar" accesskey="D" aria-expanded="true" aria-controls={"phxprof-toolbar-main-#{@token}"}>
+    <button
+      class="hide-button"
+      type="button"
+      title="Hide Toolbar"
+      accesskey="D"
+      aria-expanded="true"
+      aria-controls={"phxprof-toolbar-main-#{@token}"}
+    >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        <path
+          fill-rule="evenodd"
+          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+          clip-rule="evenodd"
+        />
       </svg>
     </button>
     """

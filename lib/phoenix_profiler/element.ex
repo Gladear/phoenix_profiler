@@ -21,7 +21,10 @@ defmodule PhoenixProfiler.Element do
   def element(assigns) do
     ~H"""
     <div class="phxprof-element" {@rest}>
-      <span :for={status <- @status} class={"phxprof-element-status phxprof-element-status-#{status.color}"}>
+      <span
+        :for={status <- @status}
+        class={"phxprof-element-status phxprof-element-status-#{status.color}"}
+      >
         <%= render_slot(status) %>
       </span>
       <div class="phxprof-element-item">
