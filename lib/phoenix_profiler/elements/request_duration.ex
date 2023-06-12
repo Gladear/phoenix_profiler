@@ -1,30 +1,30 @@
 defmodule PhoenixProfiler.Elements.RequestDuration do
-  use Phoenix.Component
+  use PhoenixProfiler.Element
 
   def render(assigns) do
     ~H"""
-    <div :if={@durations} class="phxprof-element" aria-label="Durations">
-      <div class="phxprof-element-item">
+    <.element :if={@durations} aria-label="Durations">
+      <:item>
         <% {value, label} = current_duration(@durations) %>
         <%= value %>
-        <span class="phxprof-toolbar-label"><%= label %></span>
-      </div>
+        <.label><%= label %></.label>
+      </:item>
 
-      <div class="phxprof-toolbar-details">
-        <%= if @durations.total do %>
-          <span class="phxprof-item-label">Total Duration</span>
-          <span class="phxprof-item-value"><%= @durations.total.value %><%= @durations.total.label %></span>
-        <% end %>
-        <%= if @durations.endpoint do %>
-          <span class="phxprof-item-label">Endpoint Duration</span>
-          <span class="phxprof-item-value"><%= @durations.endpoint.value %> <%= @durations.endpoint.label %></span>
-        <% end %>
-        <%= if @durations.latest_event do %>
-          <span class="phxprof-item-label">Latest Event Duration</span>
-          <span class="phxprof-item-value"><%= @durations.latest_event.value %><%= @durations.latest_event.label %></span>
-        <% end %>
-      </div>
-    </div>
+      <:details>
+        <.item :if={@durations.total}>
+          <:label>Total Duration</:label>
+          <:value><%= @durations.total.value %><%= @durations.total.label %></:value>
+        </.item>
+        <.item :if={@durations.endpoint}>
+          <:label>Endpoint Duration</:label>
+          <:value><%= @durations.endpoint.value %> <%= @durations.endpoint.label %></:value>
+        </.item>
+        <.item :if={@durations.latest_event}>
+          <:label>Latest Event Duration</:label>
+          <:value><%= @durations.latest_event.value %><%= @durations.latest_event.label %></:value>
+        </.item>
+      </:details>
+    </.element>
     """
   end
 

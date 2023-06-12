@@ -41,7 +41,7 @@ defmodule PhoenixProfiler.ToolbarLive do
     <Elements.Request.render request={@request} />
     <Elements.RequestDuration.render durations={@durations} />
     <Elements.MemoryUsage.render memory={@memory} />
-    <Elements.LiveExceptions.render exits={@exits} />
+    <Elements.LiveExceptions.render exits={@exits} exits_count={@exits_count} />
 
     <div class="phxprof-toolbar-spacer" />
 

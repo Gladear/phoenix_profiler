@@ -1,18 +1,18 @@
 defmodule PhoenixProfiler.Elements.LiveExceptions do
-  use Phoenix.Component
+  use PhoenixProfiler.Element
 
   def render(assigns) do
     ~H"""
-    <div :if={not Enum.empty?(@exits)} class="phxprof-element phxprof-element-status-red" aria-label="Exits">
-      <div class="phxprof-element-item"><%= @exits_count %></div>
+    <.element :if={@exits_count > 0} aria-label="Exits">
+      <:item><%= @exits_count %></:item>
 
-      <div class="phxprof-toolbar-details">
-        <%= for %{at: at, ref: ref, reason: reason} <- @exits do %>
-          <span class="phxprof-item-label" data-ref={ref}><%= at %></span>
-          <span class="phxprof-item-value" data-ref={ref}><%= reason %></span>
-        <% end %>
-      </div>
-    </div>
+      <:details>
+        <.item :for={%{at: at, reason: reason} <- @exits}>
+          <:label><%= at %></:label>
+          <:value><%= reason %></:value>
+        </.item>
+      </:details>
+    </.element>
     """
   end
 end
