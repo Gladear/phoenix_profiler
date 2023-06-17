@@ -22,6 +22,24 @@ defmodule PhoenixProfiler.Utils do
     endpoint.config(:phoenix_profiler, [])
   end
 
+  @library_elements [
+    PhoenixProfiler.Elements.Request,
+    PhoenixProfiler.Elements.RequestDuration,
+    PhoenixProfiler.Elements.MemoryUsage,
+    PhoenixProfiler.Elements.LiveExceptions
+  ]
+
+  @doc """
+  Return all the elements that can be displayed on the toolbar.
+
+  By default, returns the elements defined in the library.
+  Custom elements can be added through the `:custom_elements` config.
+  """
+  @spec elements() :: [PhoenixProfiler.Element.t()]
+  def elements do
+    @library_elements ++ Application.get_env(:phoenix_profiler, :custom_elements, [])
+  end
+
   @doc """
   Assigns a new private key and value in the socket.
   """

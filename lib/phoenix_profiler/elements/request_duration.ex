@@ -1,36 +1,82 @@
 defmodule PhoenixProfiler.Elements.RequestDuration do
   use PhoenixProfiler.Element
 
+  @impl PhoenixProfiler.Element
   def render(assigns) do
     ~H"""
-    <.element :if={@durations} aria-label="Durations">
+    <.element :if={@total} aria-label="Durations">
       <:item>
-        <% {value, label} = current_duration(@durations) %>
-        <%= value %>
-        <.label><%= label %></.label>
+        <.current_duration total={@total} latest_event={@latest_event} />
       </:item>
 
       <:details>
-        <.item :if={@durations.total}>
+        <.item :if={@total}>
           <:label>Total Duration</:label>
-          <:value><%= @durations.total.value %><%= @durations.total.label %></:value>
+          <:value><%= @total.value %><%= @total.label %></:value>
         </.item>
-        <.item :if={@durations.endpoint}>
+        <.item :if={@endpoint}>
           <:label>Endpoint Duration</:label>
-          <:value><%= @durations.endpoint.value %> <%= @durations.endpoint.label %></:value>
+          <:value><%= @endpoint.value %><%= @endpoint.label %></:value>
         </.item>
-        <.item :if={@durations.latest_event}>
+        <.item :if={@latest_event}>
           <:label>Latest Event Duration</:label>
-          <:value><%= @durations.latest_event.value %><%= @durations.latest_event.label %></:value>
+          <:value><%= @latest_event.value %><%= @latest_event.label %></:value>
         </.item>
       </:details>
     </.element>
     """
   end
 
-  defp current_duration(durations) do
-    if event = durations.latest_event,
-      do: {event.value, event.label},
-      else: {durations.total.value, durations.total.label}
+  defp current_duration(%{latest_event: nil} = assigns) do
+    assigns =
+      assign_new(assigns, :duration, fn ->
+        if event = assigns.latest_event,
+          do: event,
+          else: assigns.total
+      end)
+
+    ~H"""
+    <%= @duration.value %>
+    <.label><%= @duration.label %></.label>
+    """
+  end
+
+  @impl PhoenixProfiler.Element
+  def subscribed_events,
+    do: [
+      [:phxprof, :plug, :stop],
+      [:phoenix, :endpoint, :stop]
+    ]
+
+  @impl PhoenixProfiler.Element
+  def collect([:phxprof, :plug, :stop], measurements, _metadata) do
+    %{total: measurements.duration}
+  end
+
+  def collect([:phoenix, :endpoint, :stop], measurements, _metadata) do
+    %{endpoint: measurements.duration}
+  end
+
+  @impl PhoenixProfiler.Element
+  def entries_assigns(entries) do
+    %{total: total, endpoint: endpoint} = Enum.reduce(entries, &Map.merge/2)
+
+    %{
+      total: formatted_duration(total),
+      endpoint: formatted_duration(endpoint),
+      latest_event: nil
+    }
+  end
+
+  defp formatted_duration(duration) when is_integer(duration) do
+    duration = System.convert_time_unit(duration, :native, :microsecond)
+
+    if duration > 1000 do
+      value = duration |> div(1000) |> Integer.to_string()
+      %{value: value, label: "ms", phrase: "#{value} milliseconds"}
+    else
+      value = Integer.to_string(duration)
+      %{value: value, label: "µs", phrase: "#{value} microseconds"}
+    end
   end
 end

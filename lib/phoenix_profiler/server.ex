@@ -11,38 +11,31 @@ defmodule PhoenixProfiler.Server do
   Starts a telemetry server linked to the current process.
   """
   def start_link(_opts) do
+    elements = Utils.elements()
+
     config = %{
-      filter: &PhoenixProfiler.Telemetry.collect/4,
-      events: PhoenixProfiler.Telemetry.events()
+      modules_by_event:
+        elements
+        |> Map.new(&{&1, &1.subscribed_events()})
+        |> modules_by_event()
     }
 
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  @process_dict_key :phoenix_profiler_token
-
-  @doc """
-  Returns the profile for a given `token` if it exists.
-  """
-  def get_profile(token) do
-    case :ets.lookup(@entry_table, token) do
-      [] ->
-        nil
-
-      entries ->
-        Enum.reduce(entries, %{metrics: %{endpoint_duration: nil}}, fn
-          {^token, _event, %{endpoint_duration: duration}}, acc ->
-            %{acc | metrics: Map.put(acc.metrics, :endpoint_duration, duration)}
-
-          {^token, _event, %{metrics: _} = entry}, acc ->
-            {metrics, rest} = Map.pop!(entry, :metrics)
-            acc = Map.merge(acc, rest)
-            %{acc | metrics: Map.merge(acc.metrics, metrics)}
-
-          {^token, _event, data}, acc ->
-            Map.merge(acc, data)
-        end)
-    end
+  # Reverse the map so we can look up module by events.
+  #
+  # Example:
+  #
+  #     iex> modules_by_event(%{MyModule => [[:phxprof, :plug, :stop]]})
+  #     %{[:phxprof, :plug, :stop] => [MyModule]}
+  #
+  defp modules_by_event(events) do
+    Enum.reduce(events, %{}, fn {key, values}, acc ->
+      Enum.reduce(values, acc, fn value, acc ->
+        Map.update(acc, value, [key], fn list -> [key | list] end)
+      end)
+    end)
   end
 
   @doc """
@@ -51,19 +44,47 @@ defmodule PhoenixProfiler.Server do
   @spec observe(owner :: pid()) :: token :: binary()
   def observe(owner) when is_pid(owner) do
     token = GenServer.call(__MODULE__, {:observe, owner})
-    Process.put(@process_dict_key, token)
+    put_token(token)
     token
   end
 
+  @doc """
+  Returns all entries for the given token.
+  """
+  @spec get_entries(token :: binary()) :: [{token :: binary(), module :: module(), data :: any()}]
+  def get_entries(token) do
+    :ets.lookup(@entry_table, token)
+  end
+
+  # Insert entries into the entry table.
+  # The entries must be a tuple starting with the token.
+  defp put_entries(entries) do
+    :ets.insert(@entry_table, entries)
+  end
+
+  @process_token_key :phoenix_profiler_token
+
+  defp put_token(token) do
+    Process.put(@process_token_key, token)
+  end
+
+  defp fetch_token do
+    if token = Process.get(@process_token_key),
+      do: {:ok, token},
+      else: :not_found
+  end
+
   @impl GenServer
-  def init(%{events: events, filter: filter}) do
+  def init(%{modules_by_event: modules_by_event}) do
+    events = Map.keys(modules_by_event)
+
     :ets.new(@entry_table, [:named_table, :public, :duplicate_bag])
 
     :telemetry.attach_many(
       {__MODULE__, self()},
       events,
       &__MODULE__.handle_execute/4,
-      %{filter: filter}
+      %{modules_by_event: modules_by_event}
     )
 
     {:ok, %{observers: %{}}}
@@ -80,21 +101,16 @@ defmodule PhoenixProfiler.Server do
   end
 
   # Insert the event into the entry table
-  def handle_execute(event, measurements, metadata, %{filter: filter}) do
-    with token when not is_nil(token) <- Process.get(@process_dict_key),
-         {:keep, data} <- filter_event(filter, _arg = nil, event, measurements, metadata) do
-      :ets.insert(@entry_table, {token, event, data})
-    else
-      _ -> :ok
-    end
-  end
+  def handle_execute(event, measurements, metadata, %{modules_by_event: modules_by_event}) do
+    modules = modules_by_event[event]
 
-  defp filter_event(filter, arg, event, measurements, metadata) do
-    # todo: rescue/catch, detach telemetry, and warn on error
-    case filter.(arg, event, measurements, metadata) do
-      :keep -> {:keep, nil}
-      {:keep, %{}} = keep -> keep
-      :skip -> :skip
+    with {:ok, token} <- fetch_token() do
+      entries =
+        Enum.map(modules, fn module ->
+          {token, module, module.collect(event, measurements, metadata)}
+        end)
+
+      put_entries(entries)
     end
   end
 

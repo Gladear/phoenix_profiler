@@ -3,11 +3,20 @@ defmodule PhoenixProfiler.Element do
 
   defmacro __using__(_) do
     quote do
+      @behaviour unquote(__MODULE__)
       use Phoenix.Component
 
-      import PhoenixProfiler.Element
+      import unquote(__MODULE__)
     end
   end
+
+  @callback render(assigns :: map()) :: Phoenix.HTML.safe()
+
+  @callback subscribed_events() :: [event :: any()]
+
+  @callback collect(event :: any(), measurements :: map(), metadata :: map()) :: map()
+
+  @callback entries_assigns([map()]) :: map()
 
   attr :rest, :global
 

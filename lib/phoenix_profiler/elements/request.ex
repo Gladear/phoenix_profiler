@@ -1,11 +1,12 @@
 defmodule PhoenixProfiler.Elements.Request do
   use PhoenixProfiler.Element
 
+  @impl PhoenixProfiler.Element
   def render(assigns) do
     ~H"""
-    <.element aria-label={"Status, #{@request.status_phrase}"}>
-      <:status color={@request.class}>
-        <%= if @request.status_code == ":|" do %>
+    <.element aria-label={"Status, #{@status_phrase}"}>
+      <:status color={@status_class}>
+        <%= if @status_code == ":|" do %>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5"
@@ -19,118 +20,119 @@ defmodule PhoenixProfiler.Elements.Request do
             />
           </svg>
         <% else %>
-          <%= @request.status_code %>
+          <%= @status_code %>
         <% end %>
       </:status>
 
       <:item>
         <.label>@</.label>
-        <%= @request.router_helper %>
+        <%= @router_helper %>
       </:item>
 
       <:details>
         <.item>
           <:label>HTTP status</:label>
-          <:value><%= @request.status_code %> <%= @request.status_phrase %></:value>
+          <:value><%= @status_code %> <%= @status_phrase %></:value>
         </.item>
         <.item>
           <:label>Plug</:label>
-          <:value><%= @request.plug %></:value>
+          <:value><%= @plug %></:value>
         </.item>
         <.item>
           <:label>Route action</:label>
-          <:value><%= @request.action %></:value>
+          <:value><%= @action %></:value>
         </.item>
         <.item>
           <:label>Router</:label>
-          <:value><%= @request.router %></:value>
+          <:value><%= @router %></:value>
         </.item>
         <.item>
           <:label>Endpoint</:label>
-          <:value><%= @request.endpoint %></:value>
+          <:value><%= @endpoint %></:value>
         </.item>
       </:details>
     </.element>
     """
   end
 
-  # Copy-pasta from PhoenixProfiler.Routes
+  @impl PhoenixProfiler.Element
+  def subscribed_events, do: [[:phoenix, :endpoint, :stop]]
+
+  @impl PhoenixProfiler.Element
+  def collect([:phoenix, :endpoint, :stop], _measurements, metadata) do
+    %{conn: metadata.conn}
+  end
+
+  @impl PhoenixProfiler.Element
+  def entries_assigns(entries) do
+    [%{conn: conn} | _] = entries
+
+    router = conn.private[:phoenix_router]
+    {helper, plug, action} = conn_info(conn)
+
+    %{
+      status_phrase: Plug.Conn.Status.reason_phrase(conn.status),
+      status_class: request_class(conn.status),
+      status_code: conn.status,
+      router_helper: helper,
+      plug: inspect(plug),
+      action: inspect(action),
+      router: inspect(router),
+      endpoint: inspect(conn.private.phoenix_endpoint)
+    }
+  end
+
+  defp request_class(code) when is_integer(code) do
+    case code do
+      code when code >= 200 and code < 300 -> :green
+      code when code >= 400 and code < 500 -> :red
+      code when code >= 500 and code < 600 -> :red
+      _ -> nil
+    end
+  end
 
   @route_not_found {:route_not_found, nil, nil}
   @router_not_set {:router_not_set, nil, nil}
 
-  @doc """
-  Returns route information from the given `conn`.
-
-  If no router is set on the conn, returns `#{inspect(@router_not_set)}`.
-
-  If the route cannot be determined, returns `#{inspect(@route_not_found)}`.
-
-  Otherwise, this function returns a tuple of `{helper, plug_or_live_view, action_or_plug_opts}`.
-  """
-
-  def info(%Plug.Conn{private: %{phoenix_router: router}} = conn) do
-    case route_info(router, conn.method, conn.request_path, conn.host) do
-      :error -> @route_not_found
-      route_info -> info(router, route_info)
+  # Returns route information from the given `conn`.
+  #
+  # If no router is set on the conn, returns `@router_not_set`.
+  # If the route cannot be determined, returns `@route_not_found`.
+  #
+  # Otherwise, this function returns a tuple of `{helper, plug_or_live_view, action_or_plug_opts}`.
+  defp conn_info(%Plug.Conn{private: %{phoenix_router: router}} = conn) do
+    with {:ok, route_info} <- fetch_route_info(router, conn),
+         {:ok, routes} <- fetch_routes(router),
+         {:ok, route} <- find_route_within_routes(route_info, routes) do
+      {route.helper, route.plug, route.plug_opts}
     end
   end
 
-  def info(%Plug.Conn{}), do: @router_not_set
+  defp conn_info(%Plug.Conn{}), do: @router_not_set
 
-  @doc """
-  Returns information about the given route.
-
-  See `info/2`.
-  """
-  def info(router, route_info)
-
-  def info(nil, _), do: @router_not_set
-
-  def info(router, route_info) when is_atom(router) do
-    case routes(router) do
+  defp fetch_route_info(router, conn) do
+    case Phoenix.Router.route_info(router, conn.method, conn.request_path, conn.host) do
+      %{} = route_info -> {:ok, route_info}
       :error -> @route_not_found
-      routes -> match_router_helper(routes, route_info)
     end
   end
 
-  defp match_router_helper([], _), do: @route_not_found
-
-  defp match_router_helper(routes, route_info) when is_list(routes) do
-    Enum.find_value(routes, @route_not_found, &route(&1, route_info))
+  defp fetch_routes(router) do
+    case Phoenix.Router.routes(router) do
+      [] -> @route_not_found
+      routes -> {:ok, routes}
+    end
   end
 
-  defp route_info(router, method, request_path, host) do
-    Phoenix.Router.route_info(router, method, request_path, host)
+  defp find_route_within_routes(route_info, routes) do
+    if route = Enum.find(routes, &same_route?(&1, route_info)),
+      do: {:ok, route},
+      else: @route_not_found
   end
 
-  defp routes(router) do
-    Phoenix.Router.routes(router)
+  defp same_route?(route, route_info) do
+    route.path == route_info.route and
+      route.plug == route_info.plug and
+      route.plug_opts == route_info.plug_opts
   end
-
-  # route_info from LiveView telemetry
-  defp route(
-         %{metadata: %{phoenix_live_view: {lv, action, _opts, _extra}}} = route,
-         %{root_pid: _, root_view: lv, live_action: action}
-       ) do
-    {route.helper, lv, route.plug_opts}
-  end
-
-  # Live route
-  defp route(
-         %{path: path, metadata: %{phoenix_live_view: {lv, action, _, _}}} = route,
-         %{route: path, phoenix_live_view: {lv, action, _, _}}
-       ) do
-    {route.helper, lv, route.plug_opts}
-  end
-
-  # Plug route
-  defp route(
-         %{path: path, plug: plug, plug_opts: plug_opts} = route,
-         %{route: path, plug: plug, plug_opts: plug_opts}
-       ) do
-    {route.helper, plug, plug_opts}
-  end
-
-  defp route(_, _), do: nil
 end

@@ -5,9 +5,9 @@ defmodule PhoenixProfiler.ToolbarLive do
 
   require Logger
 
-  alias PhoenixProfiler.Elements
   alias PhoenixProfiler.Profile
   alias PhoenixProfiler.Server
+  alias PhoenixProfiler.Utils
 
   @toolbar_css Application.app_dir(:phoenix_profiler, "priv/static/toolbar.css")
                |> File.read!()
@@ -50,10 +50,9 @@ defmodule PhoenixProfiler.ToolbarLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Elements.Request.render request={@request} />
-    <Elements.RequestDuration.render durations={@durations} />
-    <Elements.MemoryUsage.render memory={@memory} />
-    <Elements.LiveExceptions.render exits={@exits} exits_count={@exits_count} />
+    <%= for {element, assigns} <- @elements_assigns do %>
+      <%= element.render(assigns) %>
+    <% end %>
 
     <div class="phxprof-toolbar-spacer" />
 
@@ -138,117 +137,26 @@ defmodule PhoenixProfiler.ToolbarLive do
 
   @impl Phoenix.LiveView
   def mount(_, %{"_" => %Profile{} = profile}, socket) do
+    data_entries = Server.get_entries(profile.token)
+
     socket =
       socket
-      |> assign_defaults()
+      |> assign_elements_assigns(data_entries)
       |> assign(:profile, profile)
 
-    socket =
-      case Server.get_profile(profile.token) do
-        nil -> assign_error_toolbar(socket)
-        remote_profile -> assign_toolbar(socket, remote_profile)
-      end
-
-    {:ok, socket, temporary_assigns: [exits: []]}
+    {:ok, socket}
   end
 
-  def mount(_, _, socket) do
-    {:ok,
-     socket
-     |> assign_defaults()
-     |> assign_error_toolbar()}
-  end
+  defp assign_elements_assigns(socket, entries) do
+    entries_by_element = Enum.group_by(entries, &elem(&1, 1), &elem(&1, 2))
 
-  defp assign_defaults(socket) do
-    assign(socket,
-      durations: nil,
-      exits: [],
-      exits_count: 0,
-      memory: nil,
-      root_pid: nil
-    )
-  end
+    elements_assigns =
+      Utils.elements()
+      |> Enum.map(fn element ->
+        element_entries = Map.get(entries_by_element, element, [])
+        {element, element.entries_assigns(element_entries)}
+      end)
 
-  defp assign_error_toolbar(socket) do
-    # Apply the minimal assigns when the profiler server is not started.
-    # Usually this occurs after a node has been restarted and
-    # a request is received for a stale token.
-    assign(socket, %{
-      durations: nil,
-      request: %{
-        status_code: ":|",
-        status_phrase: "No Profiler Session (refresh)",
-        endpoint: "n/a",
-        router: "n/a",
-        plug: "n/a",
-        action: "n/a",
-        router_helper: nil,
-        class: "disconnected"
-      }
-    })
-  end
-
-  defp assign_toolbar(socket, profile) do
-    %{metrics: metrics} = profile
-
-    socket
-    |> apply_request(profile)
-    |> assign(:durations, %{
-      total: duration(metrics.total_duration),
-      endpoint: duration(metrics.endpoint_duration),
-      latest_event: nil
-    })
-    |> assign(:memory, memory(metrics.memory))
-  end
-
-  defp apply_request(socket, profile) do
-    %{conn: %Plug.Conn{} = conn} = profile
-    router = conn.private[:phoenix_router]
-    {helper, plug, action} = PhoenixProfiler.Elements.Request.info(conn)
-    socket = %{socket | private: Map.put(socket.private, :phoenix_router, router)}
-
-    assign(socket, :request, %{
-      status_code: conn.status,
-      status_phrase: Plug.Conn.Status.reason_phrase(conn.status),
-      endpoint: inspect(Phoenix.Controller.endpoint_module(conn)),
-      router: inspect(router),
-      plug: inspect(plug),
-      action: inspect(action),
-      router_helper: helper,
-      class: request_class(conn.status)
-    })
-  end
-
-  defp duration(duration) when is_integer(duration) do
-    duration = System.convert_time_unit(duration, :native, :microsecond)
-
-    if duration > 1000 do
-      value = duration |> div(1000) |> Integer.to_string()
-      %{value: value, label: "ms", phrase: "#{value} milliseconds"}
-    else
-      value = Integer.to_string(duration)
-      %{value: value, label: "µs", phrase: "#{value} microseconds"}
-    end
-  end
-
-  defp duration(_), do: nil
-
-  defp memory(memory) do
-    if memory > 1024 do
-      value = memory |> div(1024) |> Integer.to_string()
-      %{value: value, label: "MiB", phrase: "#{value} mebibytes"}
-    else
-      value = Integer.to_string(memory)
-      %{value: value, label: "KiB", phrase: "#{value} kibibytes"}
-    end
-  end
-
-  defp request_class(code) when is_integer(code) do
-    case code do
-      code when code >= 200 and code < 300 -> :green
-      code when code >= 400 and code < 500 -> :red
-      code when code >= 500 and code < 600 -> :red
-      _ -> nil
-    end
+    assign(socket, :elements_assigns, elements_assigns)
   end
 end
