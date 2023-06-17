@@ -16,7 +16,7 @@ defmodule PhoenixProfiler.Element do
 
   @callback collect(event :: any(), measurements :: map(), metadata :: map()) :: map()
 
-  @callback entries_assigns([map()]) :: map()
+  @callback entries_assigns([map()], map()) :: map()
 
   attr :rest, :global
 

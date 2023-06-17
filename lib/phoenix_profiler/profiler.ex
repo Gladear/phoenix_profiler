@@ -18,14 +18,16 @@ defmodule PhoenixProfiler.Profiler do
 
   For a LiveView socket, raises if the socket is not connected.
   """
-  @spec enable(receiver) :: receiver when receiver: Plug.Conn.t() | Phoenix.Socket.t()
-  def enable(conn_or_socket) do
+  @spec enable(receiver, token :: String.t()) :: receiver
+        when receiver: Plug.Conn.t() | Phoenix.Socket.t()
+  def enable(conn_or_socket, token \\ nil) do
     ensure_connected_socket!(conn_or_socket)
 
     if profile_set?(conn_or_socket) do
       conn_or_socket
     else
-      new_profile(conn_or_socket)
+      observable_token = Server.add_observable(token)
+      new_profile(conn_or_socket, observable_token)
     end
   end
 
@@ -55,12 +57,7 @@ defmodule PhoenixProfiler.Profiler do
     match?(%{:phoenix_profiler => %Profile{}}, conn_or_socket.private)
   end
 
-  defp new_profile(conn_or_socket) do
-    token =
-      conn_or_socket
-      |> Utils.owner_pid()
-      |> Server.observe()
-
+  defp new_profile(conn_or_socket, token) do
     profile = Profile.new(token)
 
     Utils.put_private(conn_or_socket, :phoenix_profiler, profile)

@@ -91,15 +91,15 @@ defmodule PhoenixProfiler.Plug do
       attrs =
         Keyword.merge(
           toolbar_attrs,
-          id: "pwdt#{profile.token}",
           class: "phxprof-toolbar",
+          "data-token": profile.token,
           role: "region",
           name: "Phoenix Web Debug Toolbar"
         )
 
       ToolbarLive.toolbar(%{
         conn: conn,
-        session: %{"_" => profile},
+        session: %{"_phxprof" => profile},
         profile: profile,
         toolbar_attrs: attrs
       })
@@ -115,11 +115,17 @@ defmodule PhoenixProfiler.Plug do
   def on_mount(_arg, _params, _session, socket) do
     socket =
       if Phoenix.LiveView.connected?(socket) and Profiler.enabled?(socket) do
-        Profiler.enable(socket)
+        Profiler.enable(socket, socket_token(socket))
       else
         socket
       end
 
     {:cont, socket}
+  end
+
+  defp socket_token(socket) do
+    socket
+    |> Phoenix.LiveView.get_connect_params()
+    |> Map.get("_phxprof_token", nil)
   end
 end

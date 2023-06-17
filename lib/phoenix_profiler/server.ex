@@ -14,10 +14,10 @@ defmodule PhoenixProfiler.Server do
     elements = Utils.elements()
 
     config = %{
-      modules_by_event:
+      elements_by_event:
         elements
         |> Map.new(&{&1, &1.subscribed_events()})
-        |> modules_by_event()
+        |> elements_by_event()
     }
 
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
@@ -27,10 +27,10 @@ defmodule PhoenixProfiler.Server do
   #
   # Example:
   #
-  #     iex> modules_by_event(%{MyModule => [[:phxprof, :plug, :stop]]})
+  #     iex> elements_by_event(%{MyModule => [[:phxprof, :plug, :stop]]})
   #     %{[:phxprof, :plug, :stop] => [MyModule]}
   #
-  defp modules_by_event(events) do
+  defp elements_by_event(events) do
     Enum.reduce(events, %{}, fn {key, values}, acc ->
       Enum.reduce(values, acc, fn value, acc ->
         Map.update(acc, value, [key], fn list -> [key | list] end)
@@ -41,11 +41,23 @@ defmodule PhoenixProfiler.Server do
   @doc """
   Makes the caller observable by listeners.
   """
-  @spec observe(owner :: pid()) :: token :: binary()
-  def observe(owner) when is_pid(owner) do
-    token = GenServer.call(__MODULE__, {:observe, owner})
+  @spec add_observable(token | nil) :: token when token: binary()
+  def add_observable(token \\ nil) do
+    token = token || Utils.generate_token()
     put_token(token)
     token
+  end
+
+  @doc """
+  Subscribes the `owner` to the given token.
+  """
+  @spec subscribe(owner :: pid(), token :: binary()) :: :ok
+  def subscribe(owner, token) when is_pid(owner) do
+    GenServer.cast(__MODULE__, {:subscribe, owner, token})
+  end
+
+  defp subscribers(token) do
+    GenServer.call(__MODULE__, {:subscribers, token})
   end
 
   @doc """
@@ -75,8 +87,8 @@ defmodule PhoenixProfiler.Server do
   end
 
   @impl GenServer
-  def init(%{modules_by_event: modules_by_event}) do
-    events = Map.keys(modules_by_event)
+  def init(%{elements_by_event: elements_by_event}) do
+    events = Map.keys(elements_by_event)
 
     :ets.new(@entry_table, [:named_table, :public, :duplicate_bag])
 
@@ -84,34 +96,51 @@ defmodule PhoenixProfiler.Server do
       {__MODULE__, self()},
       events,
       &__MODULE__.handle_execute/4,
-      %{modules_by_event: modules_by_event}
+      %{elements_by_event: elements_by_event}
     )
 
-    {:ok, %{observers: %{}}}
+    {:ok, %{subscribers: %{}}}
   end
 
   @impl GenServer
-  def handle_call({:observe, owner}, _from, state) do
-    token =
-      if found_token = Map.get(state.observers, owner),
-        do: found_token,
-        else: Utils.generate_token()
+  def handle_call({:subscribers, token}, _from, state) do
+    {:reply, Map.get(state.subscribers, token, []), state}
+  end
 
-    {:reply, token, put_in(state.observers[owner], token)}
+  @impl GenServer
+  def handle_cast({:subscribe, owner, token}, state) do
+    new_subscribers = Map.update(state.subscribers, token, [owner], fn list -> [owner | list] end)
+
+    {:noreply, %{state | subscribers: new_subscribers}}
   end
 
   # Insert the event into the entry table
-  def handle_execute(event, measurements, metadata, %{modules_by_event: modules_by_event}) do
-    modules = modules_by_event[event]
+  def handle_execute(event, measurements, metadata, %{elements_by_event: elements_by_event}) do
+    with false <- library_event?(event, metadata),
+         {:ok, token} <- fetch_token() do
+      elements = elements_by_event[event]
 
-    with {:ok, token} <- fetch_token() do
       entries =
-        Enum.map(modules, fn module ->
-          {token, module, module.collect(event, measurements, metadata)}
+        Enum.map(elements, fn element ->
+          {token, element, element.collect(event, measurements, metadata)}
         end)
 
       put_entries(entries)
+      notify_subscribers(token, entries)
     end
+  end
+
+  defp library_event?([:phoenix, :live_view | _], metadata) do
+    match?(%{session: %{"_phxprof" => _}}, metadata)
+  end
+
+  defp library_event?(_event, _metadata), do: false
+
+  defp notify_subscribers(token, new_entries) do
+    subscribers(token)
+    |> Enum.each(fn subscriber ->
+      send(subscriber, {:entries, new_entries})
+    end)
   end
 
   @impl GenServer

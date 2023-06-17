@@ -27,7 +27,7 @@ defmodule PhoenixProfiler.Elements.LiveExceptions do
   end
 
   @impl PhoenixProfiler.Element
-  def entries_assigns(_entries) do
+  def entries_assigns(_entries, _current_assigns) do
     %{exits_count: 0, exits: []}
   end
 end

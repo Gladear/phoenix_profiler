@@ -27,7 +27,7 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
     """
   end
 
-  defp current_duration(%{latest_event: nil} = assigns) do
+  defp current_duration(assigns) do
     assigns =
       assign_new(assigns, :duration, fn ->
         if event = assigns.latest_event,
@@ -45,7 +45,9 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
   def subscribed_events,
     do: [
       [:phxprof, :plug, :stop],
-      [:phoenix, :endpoint, :stop]
+      [:phoenix, :endpoint, :stop],
+      [:phoenix, :live_view, :handle_event, :stop],
+      [:phoenix, :live_component, :handle_event, :stop]
     ]
 
   @impl PhoenixProfiler.Element
@@ -57,16 +59,35 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
     %{endpoint: measurements.duration}
   end
 
-  @impl PhoenixProfiler.Element
-  def entries_assigns(entries) do
-    %{total: total, endpoint: endpoint} = Enum.reduce(entries, &Map.merge/2)
-
-    %{
-      total: formatted_duration(total),
-      endpoint: formatted_duration(endpoint),
-      latest_event: nil
-    }
+  def collect([:phoenix, live_view_or_component, :handle_event, :stop], measurements, _metadata)
+      when live_view_or_component in [:live_view, :live_component] do
+    %{latest_event: measurements.duration}
   end
+
+  @impl PhoenixProfiler.Element
+  def entries_assigns([], current_assigns) do
+    Enum.into(current_assigns, %{
+      total: nil,
+      endpoint: nil,
+      latest_event: nil
+    })
+  end
+
+  def entries_assigns(entries, current_assigns) do
+    data = Enum.reduce(entries, &Map.merge/2)
+
+    Map.merge(
+      current_assigns,
+      %{
+        total: formatted_duration(data[:total]),
+        endpoint: formatted_duration(data[:endpoint]),
+        latest_event: formatted_duration(data[:latest_event])
+      },
+      fn _key, current, new -> coalesce(current, new) end
+    )
+  end
+
+  defp formatted_duration(nil), do: nil
 
   defp formatted_duration(duration) when is_integer(duration) do
     duration = System.convert_time_unit(duration, :native, :microsecond)
@@ -79,4 +100,7 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
       %{value: value, label: "µs", phrase: "#{value} microseconds"}
     end
   end
+
+  defp coalesce(nil, new), do: new
+  defp coalesce(current, _new), do: current
 end

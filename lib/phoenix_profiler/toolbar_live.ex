@@ -136,7 +136,7 @@ defmodule PhoenixProfiler.ToolbarLive do
   end
 
   @impl Phoenix.LiveView
-  def mount(_, %{"_" => %Profile{} = profile}, socket) do
+  def mount(_, %{"_phxprof" => %Profile{} = profile}, socket) do
     data_entries = Server.get_entries(profile.token)
 
     socket =
@@ -144,19 +144,30 @@ defmodule PhoenixProfiler.ToolbarLive do
       |> assign_elements_assigns(data_entries)
       |> assign(:profile, profile)
 
+    if connected?(socket) do
+      Server.subscribe(self(), profile.token)
+    end
+
     {:ok, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:entries, new_entries}, socket) do
+    {:noreply, assign_elements_assigns(socket, new_entries)}
   end
 
   defp assign_elements_assigns(socket, entries) do
     entries_by_element = Enum.group_by(entries, &elem(&1, 1), &elem(&1, 2))
 
-    elements_assigns =
+    socket
+    |> assign_new(:elements_assigns, fn -> [] end)
+    |> update(:elements_assigns, fn current_element_assigns ->
       Utils.elements()
       |> Enum.map(fn element ->
         element_entries = Map.get(entries_by_element, element, [])
-        {element, element.entries_assigns(element_entries)}
+        current_assigns = Keyword.get(current_element_assigns, element, %{})
+        {element, element.entries_assigns(element_entries, current_assigns)}
       end)
-
-    assign(socket, :elements_assigns, elements_assigns)
+    end)
   end
 end
