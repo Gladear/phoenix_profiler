@@ -61,10 +61,7 @@ defmodule PhoenixProfiler.Profiler do
       |> Utils.owner_pid()
       |> Server.observe()
 
-    profile =
-      conn_or_socket
-      |> Utils.conn_or_socket_endpoint()
-      |> Profile.new(token)
+    profile = Profile.new(token)
 
     Utils.put_private(conn_or_socket, :phoenix_profiler, profile)
   end
