@@ -7,7 +7,7 @@ defmodule DemoWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_demo_key",
-    signing_salt: "TPuYwhou",
+    signing_salt: "yI3PztVY",
     same_site: "Lax"
   ]
 
@@ -29,6 +29,7 @@ defmodule DemoWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
+    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :demo
     plug PhoenixProfiler
   end
 

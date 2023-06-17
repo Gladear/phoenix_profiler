@@ -10,10 +10,13 @@ defmodule Demo.Application do
     children = [
       # Start the Telemetry supervisor
       DemoWeb.Telemetry,
+      # Start the Ecto repository
+      Demo.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: Demo.PubSub},
       # Start the Endpoint (http/https)
       DemoWeb.Endpoint,
+      # Start the Phoenix Profiler server
       PhoenixProfiler.Server
       # Start a worker by calling: Demo.Worker.start_link(arg)
       # {Demo.Worker, arg}

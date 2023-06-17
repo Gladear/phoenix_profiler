@@ -1,5 +1,15 @@
 import Config
 
+# Configure your database
+config :demo, Demo.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "demo_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -13,8 +23,11 @@ config :demo, DemoWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "7Nm20lI9NJYOYUVcG7RNDndLe7kMZx1HRS6+ubqesvPAgQtqylTcQS5fRx+FwPOY",
-  watchers: [],
+  secret_key_base: "OAV4a3NJoGSgZlIUJhFXrF75jivKvYgWKOm2tYYFQdaWOHsdQ4CAq8lBLXR2Kv1N",
+  watchers: [
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+  ],
   phoenix_profiler: []
 
 # ## SSL Support

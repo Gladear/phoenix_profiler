@@ -1,10 +1,23 @@
 import Config
 
+# Configure your database
+#
+# The MIX_TEST_PARTITION environment variable can be used
+# to provide built-in test partitioning in CI environment.
+# Run `mix help test` for more information.
+config :demo, Demo.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "demo_test#{System.get_env("MIX_TEST_PARTITION")}",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 10
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :demo, DemoWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "LWBFA3ftA/fv+jiBd3oweCrKaPxFlgXPBNyo2mcecrmpPuPX2x9zr6X6AfQVRQCV",
+  secret_key_base: "3mLcJO73MmgWTu0AS7j2CFyhWf2fL8rSEp8HIT7q3NAjLlAetGdEFZGmWAkBlOww",
   server: false
 
 # Print only warnings and errors during test
