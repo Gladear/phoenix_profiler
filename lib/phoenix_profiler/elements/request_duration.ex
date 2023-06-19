@@ -65,26 +65,22 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
   end
 
   @impl PhoenixProfiler.Element
-  def entries_assigns([], current_assigns) do
-    Enum.into(current_assigns, %{
+  def entries_assigns([]) do
+    %{
       total: nil,
       endpoint: nil,
       latest_event: nil
-    })
+    }
   end
 
-  def entries_assigns(entries, current_assigns) do
+  def entries_assigns(entries) do
     data = Enum.reduce(entries, &Map.merge/2)
 
-    Map.merge(
-      current_assigns,
-      %{
-        total: formatted_duration(data[:total]),
-        endpoint: formatted_duration(data[:endpoint]),
-        latest_event: formatted_duration(data[:latest_event])
-      },
-      fn _key, current, new -> coalesce(current, new) end
-    )
+    %{
+      total: formatted_duration(data[:total]),
+      endpoint: formatted_duration(data[:endpoint]),
+      latest_event: formatted_duration(data[:latest_event])
+    }
   end
 
   defp formatted_duration(nil), do: nil
@@ -100,7 +96,4 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
       %{value: value, label: "µs", phrase: "#{value} microseconds"}
     end
   end
-
-  defp coalesce(nil, new), do: new
-  defp coalesce(current, _new), do: current
 end

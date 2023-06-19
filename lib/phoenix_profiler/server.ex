@@ -120,13 +120,15 @@ defmodule PhoenixProfiler.Server do
          {:ok, token} <- fetch_token() do
       elements = elements_by_event[event]
 
-      entries =
+      old_entries = get_entries(token)
+
+      new_entries =
         Enum.map(elements, fn element ->
           {token, element, element.collect(event, measurements, metadata)}
         end)
 
-      put_entries(entries)
-      notify_subscribers(token, entries)
+      put_entries(new_entries)
+      notify_subscribers(token, old_entries ++ new_entries)
     end
   end
 
@@ -136,10 +138,10 @@ defmodule PhoenixProfiler.Server do
 
   defp library_event?(_event, _metadata), do: false
 
-  defp notify_subscribers(token, new_entries) do
+  defp notify_subscribers(token, entries) do
     subscribers(token)
     |> Enum.each(fn subscriber ->
-      send(subscriber, {:entries, new_entries})
+      send(subscriber, {:entries, entries})
     end)
   end
 

@@ -37,12 +37,12 @@ defmodule PhoenixProfiler.Elements.MemoryUsage do
   end
 
   @impl PhoenixProfiler.Element
-  def entries_assigns([], current_assigns) do
-    Enum.into(current_assigns, %{memory: nil})
+  def entries_assigns([]) do
+    %{memory: nil}
   end
 
-  def entries_assigns(entries, _current_assigns) do
-    [%{memory: memory} | _] = entries
+  def entries_assigns(entries) do
+    %{memory: memory} = List.last(entries)
 
     %{memory: formatted_memory(memory)}
   end

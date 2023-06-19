@@ -49,8 +49,8 @@ defmodule PhoenixProfiler.Elements.Request do
   end
 
   @impl PhoenixProfiler.Element
-  def entries_assigns([], current_assigns) do
-    Enum.into(current_assigns, %{
+  def entries_assigns([]) do
+    %{
       status_phrase: "No Profiler Session (refresh)",
       status_class: "disconnected",
       status_code: ":|",
@@ -59,11 +59,11 @@ defmodule PhoenixProfiler.Elements.Request do
       action: "n/a",
       router: "n/a",
       endpoint: "n/a"
-    })
+    }
   end
 
-  def entries_assigns(entries, _current_assigns) do
-    [%{conn: conn} | _] = entries
+  def entries_assigns(entries) do
+    %{conn: conn} = List.last(entries)
 
     router = conn.private[:phoenix_router]
     {helper, plug, action} = conn_info(conn)

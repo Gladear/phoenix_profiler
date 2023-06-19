@@ -159,15 +159,13 @@ defmodule PhoenixProfiler.ToolbarLive do
   defp assign_elements_assigns(socket, entries) do
     entries_by_element = Enum.group_by(entries, &elem(&1, 1), &elem(&1, 2))
 
-    socket
-    |> assign_new(:elements_assigns, fn -> [] end)
-    |> update(:elements_assigns, fn current_element_assigns ->
+    element_assigns =
       Utils.elements()
       |> Enum.map(fn element ->
         element_entries = Map.get(entries_by_element, element, [])
-        current_assigns = Keyword.get(current_element_assigns, element, %{})
-        {element, element.entries_assigns(element_entries, current_assigns)}
+        {element, element.entries_assigns(element_entries)}
       end)
-    end)
+
+    assign(socket, :elements_assigns, element_assigns)
   end
 end
