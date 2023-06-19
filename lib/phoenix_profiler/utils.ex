@@ -2,14 +2,6 @@ defmodule PhoenixProfiler.Utils do
   @moduledoc false
   alias Phoenix.LiveView
 
-  @doc "Returns the owner pid of a given `conn` or `socket`."
-  def owner_pid(%Plug.Conn{} = conn), do: conn.owner
-  def owner_pid(%LiveView.Socket{} = socket), do: socket.transport_pid
-
-  @doc "Returns the endpoint for a given `conn` or `socket`."
-  def conn_or_socket_endpoint(%Plug.Conn{} = conn), do: conn.private.phoenix_endpoint
-  def conn_or_socket_endpoint(%LiveView.Socket{endpoint: endpoint}), do: endpoint
-
   @doc "Get the config of a given `conn` or `socket`."
   def conn_or_socket_config(conn_or_socket) do
     conn_or_socket
@@ -17,17 +9,23 @@ defmodule PhoenixProfiler.Utils do
     |> profiler_config()
   end
 
-  @doc "Get the config of a given Phoenix endpoint."
-  def profiler_config(endpoint) do
+  # Returns the endpoint for a given `conn` or `socket`
+  defp conn_or_socket_endpoint(%Plug.Conn{} = conn), do: conn.private.phoenix_endpoint
+  defp conn_or_socket_endpoint(%LiveView.Socket{endpoint: endpoint}), do: endpoint
+
+  # Get the config of a given Phoenix endpoint
+  defp profiler_config(endpoint) do
     endpoint.config(:phoenix_profiler, [])
   end
 
   @library_elements [
-    PhoenixProfiler.Elements.Request,
-    PhoenixProfiler.Elements.RequestDuration,
-    PhoenixProfiler.Elements.MemoryUsage,
-    PhoenixProfiler.Elements.LiveExceptions
-  ]
+                      PhoenixProfiler.Elements.Request,
+                      PhoenixProfiler.Elements.RequestDuration,
+                      PhoenixProfiler.Elements.MemoryUsage,
+                      if(Code.ensure_loaded?(Ecto), do: PhoenixProfiler.Elements.EctoRepoUsage),
+                      PhoenixProfiler.Elements.LiveExceptions
+                    ]
+                    |> Enum.reject(&is_nil/1)
 
   @doc """
   Return all the elements that can be displayed on the toolbar.

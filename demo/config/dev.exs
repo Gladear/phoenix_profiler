@@ -30,6 +30,9 @@ config :demo, DemoWeb.Endpoint,
   ],
   phoenix_profiler: []
 
+config :phoenix_profiler,
+  ecto_repos: [Demo.Repo]
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

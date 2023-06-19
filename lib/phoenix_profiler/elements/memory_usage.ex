@@ -4,21 +4,19 @@ defmodule PhoenixProfiler.Elements.MemoryUsage do
   @impl PhoenixProfiler.Element
   def render(assigns) do
     ~H"""
-    <div>
-      <.element :if={@memory} aria-label={"Memory, #{@memory.phrase}"}>
-        <:item>
-          <%= @memory.value %>
-          <.label><%= @memory.label %></.label>
-        </:item>
+    <.element :if={@memory} aria-label={"Memory, #{@memory.phrase}"}>
+      <:item>
+        <%= @memory.value %>
+        <.label><%= @memory.label %></.label>
+      </:item>
 
-        <:details>
-          <.item>
-            <:label>Memory</:label>
-            <:value><%= @memory.value %> <%= @memory.label %></:value>
-          </.item>
-        </:details>
-      </.element>
-    </div>
+      <:details>
+        <.item>
+          <:label>Memory</:label>
+          <:value><%= @memory.value %> <%= @memory.label %></:value>
+        </.item>
+      </:details>
+    </.element>
     """
   end
 

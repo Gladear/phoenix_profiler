@@ -102,7 +102,6 @@
   position: relative;
   display: flex;
   height: var(--size-toolbar);
-  max-width: 7.5rem;
   color: var(--color-fg-default);
 }
 
@@ -141,9 +140,12 @@
 }
 
 .phxprof-element-item {
+  max-width: 7.5rem;
   padding: 0.25rem 0.5rem;
   line-height: 2.25rem;
+  overflow: hidden;
   white-space: nowrap;
+  text-overflow: ellipsis;
   transition: background-color 0.2s ease;
 }
 

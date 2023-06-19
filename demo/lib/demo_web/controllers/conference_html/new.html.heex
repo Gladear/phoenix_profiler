@@ -1,0 +1,8 @@
+<.header>
+  New Conference
+  <:subtitle>Use this form to manage conference records in your database.</:subtitle>
+</.header>
+
+<.conference_form changeset={@changeset} action={~p"/conferences"} />
+
+<.back navigate={~p"/conferences"}>Back to conferences</.back>
