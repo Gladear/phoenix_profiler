@@ -15,3 +15,5 @@ toolbar
   .addEventListener("click", () => toggleToolbar(false));
 
 toggleToolbar(localStorage.getItem(SHOW) === "true");
+
+window.getPhxProfToken = () => toolbar.dataset.token;

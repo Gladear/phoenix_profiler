@@ -23,7 +23,7 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-let phxprofToken = document.querySelector(".phxprof-toolbar")?.dataset.token;
+let phxprofToken = window.getPhxProfToken?.();
 
 let liveSocket = new LiveSocket("/live", Socket, {params: {_csrf_token: csrfToken, _phxprof_token: phxprofToken}})
 

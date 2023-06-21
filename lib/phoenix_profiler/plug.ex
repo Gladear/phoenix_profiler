@@ -6,6 +6,9 @@ defmodule PhoenixProfiler.Plug do
   alias PhoenixProfiler.ToolbarLive
   alias PhoenixProfiler.Utils
 
+  @phxprof_token_header "x-phxprof-token"
+  @phxprof_token_param "_phxprof_token"
+
   def init(opts) do
     opts
   end
@@ -17,16 +20,25 @@ defmodule PhoenixProfiler.Plug do
     conn
   end
 
-  def call(conn, _) do
+  def call(conn, _opts) do
     endpoint = conn.private.phoenix_endpoint
     config = endpoint.config(:phoenix_profiler)
 
     if config do
+      token = conn_token(conn)
+
       conn
-      |> Profiler.enable()
+      |> Profiler.enable(token)
       |> before_send_profile()
     else
       conn
+    end
+  end
+
+  defp conn_token(conn) do
+    case get_req_header(conn, @phxprof_token_header) do
+      [] -> nil
+      [token | _] -> token
     end
   end
 
@@ -126,6 +138,6 @@ defmodule PhoenixProfiler.Plug do
   defp socket_token(socket) do
     socket
     |> Phoenix.LiveView.get_connect_params()
-    |> Map.get("_phxprof_token", nil)
+    |> Map.get(@phxprof_token_param, nil)
   end
 end
