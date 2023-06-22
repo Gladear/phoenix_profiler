@@ -155,7 +155,7 @@ defmodule PhoenixProfiler.ToolbarLive do
   end
 
   defp assign_elements_assigns(socket, entries) do
-    entries_by_element = Enum.group_by(entries, &elem(&1, 1), &elem(&1, 2))
+    entries_by_element = Enum.group_by(entries, &elem(&1, 0), &elem(&1, 1))
 
     element_assigns =
       Utils.elements()

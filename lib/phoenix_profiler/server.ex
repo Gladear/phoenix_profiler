@@ -4,9 +4,6 @@ defmodule PhoenixProfiler.Server do
 
   alias PhoenixProfiler.Utils
 
-  # token -> event, data
-  @entry_table __MODULE__.Entry
-
   @doc """
   Starts a telemetry server linked to the current process.
   """
@@ -56,22 +53,12 @@ defmodule PhoenixProfiler.Server do
     GenServer.cast(__MODULE__, {:subscribe, owner, token})
   end
 
-  defp subscribers(token) do
-    GenServer.call(__MODULE__, {:subscribers, token})
-  end
-
   @doc """
   Returns all entries for the given token.
   """
   @spec get_entries(token :: binary()) :: [{token :: binary(), module :: module(), data :: any()}]
   def get_entries(token) do
-    :ets.lookup(@entry_table, token)
-  end
-
-  # Insert entries into the entry table.
-  # The entries must be a tuple starting with the token.
-  defp put_entries(entries) do
-    :ets.insert(@entry_table, entries)
+    GenServer.call(__MODULE__, {:get_entries, token})
   end
 
   @process_token_key :phoenix_profiler_token
@@ -90,55 +77,18 @@ defmodule PhoenixProfiler.Server do
 
     Enum.find_value(callers, :not_found, fn caller ->
       with {:dictionary, dict} <- Process.info(caller, :dictionary),
-            token when is_binary(token) <- dict[@process_token_key] do
+           token when is_binary(token) <- dict[@process_token_key] do
         {:ok, token}
       end
     end)
   end
 
-  @impl GenServer
-  def init(%{elements_by_event: elements_by_event}) do
-    events = Map.keys(elements_by_event)
-
-    :ets.new(@entry_table, [:named_table, :public, :duplicate_bag])
-
-    :telemetry.attach_many(
-      {__MODULE__, self()},
-      events,
-      &__MODULE__.handle_execute/4,
-      %{elements_by_event: elements_by_event}
-    )
-
-    {:ok, %{subscribers: %{}}}
-  end
-
-  @impl GenServer
-  def handle_call({:subscribers, token}, _from, state) do
-    {:reply, Map.get(state.subscribers, token, []), state}
-  end
-
-  @impl GenServer
-  def handle_cast({:subscribe, owner, token}, state) do
-    new_subscribers = Map.update(state.subscribers, token, [owner], fn list -> [owner | list] end)
-
-    {:noreply, %{state | subscribers: new_subscribers}}
-  end
-
-  # Insert the event into the entry table
-  def handle_execute(event, measurements, metadata, %{elements_by_event: elements_by_event}) do
+  # Telemetry event handler
+  @doc false
+  def handle_execute(event, measurements, metadata, _config) do
     with false <- library_event?(event, metadata),
          {:ok, token} <- fetch_token() do
-      elements = elements_by_event[event]
-
-      old_entries = get_entries(token)
-
-      new_entries =
-        Enum.map(elements, fn element ->
-          {token, element, element.collect(event, measurements, metadata)}
-        end)
-
-      put_entries(new_entries)
-      notify_subscribers(token, old_entries ++ new_entries)
+      GenServer.cast(__MODULE__, {:store_event, token, event, measurements, metadata})
     end
   end
 
@@ -148,9 +98,54 @@ defmodule PhoenixProfiler.Server do
 
   defp library_event?(_event, _metadata), do: false
 
-  defp notify_subscribers(token, entries) do
-    subscribers(token)
-    |> Enum.each(fn subscriber ->
+  @impl GenServer
+  def init(%{elements_by_event: elements_by_event}) do
+    events = Map.keys(elements_by_event)
+
+    :telemetry.attach_many(
+      {__MODULE__, self()},
+      events,
+      &__MODULE__.handle_execute/4,
+      nil
+    )
+
+    {:ok, %{elements_by_event: elements_by_event, subscribers: %{}, entries: %{}}}
+  end
+
+  @impl GenServer
+  def handle_call({:get_entries, token}, _from, state) do
+    {:reply, Map.get(state.entries, token, []), state}
+  end
+
+  @impl GenServer
+  def handle_cast({:subscribe, owner, token}, state) do
+    new_subscribers = Map.update(state.subscribers, token, [owner], fn list -> [owner | list] end)
+
+    {:noreply, %{state | subscribers: new_subscribers}}
+  end
+
+  def handle_cast({:store_event, token, event, measurements, metadata}, state) do
+    elements = Map.fetch!(state.elements_by_event, event)
+
+    event_entries =
+      Enum.map(elements, fn element ->
+        {element, element.collect(event, measurements, metadata)}
+      end)
+
+    {entries, updated_state} =
+      get_and_update_in(state.entries[token], fn entries ->
+        all_entries = (entries || []) ++ event_entries
+        {all_entries, all_entries}
+      end)
+
+    Map.get(state.subscribers, token, [])
+    |> notify_subscribers(entries)
+
+    {:noreply, updated_state}
+  end
+
+  defp notify_subscribers(subscribers, entries) do
+    Enum.each(subscribers, fn subscriber ->
       send(subscriber, {:entries, entries})
     end)
   end

@@ -122,7 +122,6 @@ if Code.ensure_loaded?(Ecto) do
           "N/A"
         end
 
-
       %{long: long_label, compact: compact_label}
     end
   end
