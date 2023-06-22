@@ -80,10 +80,20 @@ defmodule PhoenixProfiler.Server do
     Process.put(@process_token_key, token)
   end
 
+  # Find the token in the call stack
+  #
+  # The main process may have spawned another process or task that won't have the token
+  # in its dictionary. This function will traverse the "process call stack" to find the
+  # original token.
   defp fetch_token do
-    if token = Process.get(@process_token_key),
-      do: {:ok, token},
-      else: :not_found
+    callers = [self() | Process.get(:"$callers", [])]
+
+    Enum.find_value(callers, :not_found, fn caller ->
+      with {:dictionary, dict} <- Process.info(caller, :dictionary),
+            token when is_binary(token) <- dict[@process_token_key] do
+        {:ok, token}
+      end
+    end)
   end
 
   @impl GenServer
