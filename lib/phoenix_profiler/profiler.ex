@@ -10,7 +10,7 @@ defmodule PhoenixProfiler.Profiler do
   @spec enabled?(receiver) :: boolean() when receiver: Plug.Conn.t() | Phoenix.Socket.t()
   def enabled?(conn_or_socket) do
     config = Utils.conn_or_socket_config(conn_or_socket)
-    Keyword.get(config, :enabled?,  true)
+    Keyword.get(config, :enabled?, true)
   end
 
   @doc """

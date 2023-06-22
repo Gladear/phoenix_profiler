@@ -39,29 +39,28 @@ defmodule PhoenixProfiler.Plug do
     end
   end
 
+  # HTML Injection
+  # Copyright (c) 2018 Chris McCord
+  # https://github.com/phoenixframework/phoenix_live_reload/blob/94d1b2f7977c118970f2617fa7fbd8264d39bbc4/lib/phoenix_live_reload/live_reloader.ex#L152
   defp before_send_profile(conn) do
     register_before_send(conn, fn conn ->
-      with %{phoenix_profiler: profile} <- conn.private do
-        duration = System.monotonic_time() - profile.start_time
-        :telemetry.execute([:phxprof, :plug, :stop], %{duration: duration}, %{conn: conn})
+      if conn.resp_body != nil and html?(conn) do
+        resp_body = IO.iodata_to_binary(conn.resp_body)
+        endpoint = conn.private.phoenix_endpoint
 
-        maybe_inject_debug_toolbar(conn)
-      else
-        _ ->
+        if has_body?(resp_body) and :code.is_loaded(endpoint) do
+          {head, [last]} = Enum.split(String.split(resp_body, "</body>"), -1)
+          head = Enum.intersperse(head, "</body>")
+          body = [head, debug_toolbar_assets_tag(conn), "</body>" | last]
+          put_in(conn.resp_body, body)
+        else
           conn
+        end
+      else
+        conn
       end
     end)
   end
-
-  defp maybe_inject_debug_toolbar(conn) do
-    if has_resp_body?(conn) and html?(conn) do
-      inject_debug_toolbar(conn)
-    else
-      conn
-    end
-  end
-
-  defp has_resp_body?(conn), do: conn.resp_body != nil
 
   defp html?(conn) do
     case get_resp_header(conn, "content-type") do
@@ -70,54 +69,31 @@ defmodule PhoenixProfiler.Plug do
     end
   end
 
-  # HTML Injection
-  # Copyright (c) 2018 Chris McCord
-  # https://github.com/phoenixframework/phoenix_live_reload/blob/564ab19d54f2476a6c43d43beeb3ed2807f453c0/lib/phoenix_live_reload/live_reloader.ex#L129
-  defp inject_debug_toolbar(conn) do
-    endpoint = conn.private.phoenix_endpoint
-
-    resp_body = IO.iodata_to_binary(conn.resp_body)
-
-    if has_body_tag?(resp_body) and Code.ensure_loaded?(endpoint) do
-      {head, [last]} = Enum.split(String.split(resp_body, "</body>"), -1)
-      head = Enum.intersperse(head, "</body>")
-      body = [head, debug_toolbar_assets_tag(conn), "</body>" | last]
-      put_in(conn.resp_body, body)
-    else
-      conn
-    end
-  end
-
-  defp has_body_tag?(resp_body), do: String.contains?(resp_body, "<body")
+  defp has_body?(resp_body), do: String.contains?(resp_body, "<body")
 
   defp debug_toolbar_assets_tag(conn) do
-    try do
-      config = Utils.conn_or_socket_config(conn)
+    config = Utils.conn_or_socket_config(conn)
 
-      toolbar_attrs = Keyword.get(config, :toolbar_attrs, [])
-      profile = conn.private.phoenix_profiler
+    toolbar_attrs = Keyword.get(config, :toolbar_attrs, [])
+    profile = conn.private.phoenix_profiler
 
-      attrs =
-        Keyword.merge(
-          toolbar_attrs,
-          class: "phxprof-toolbar",
-          "data-token": profile.token,
-          role: "region",
-          name: "Phoenix Web Debug Toolbar"
-        )
+    attrs =
+      Keyword.merge(
+        toolbar_attrs,
+        class: "phxprof-toolbar",
+        "data-token": profile.token,
+        role: "region",
+        name: "Phoenix Web Debug Toolbar"
+      )
 
-      ToolbarLive.toolbar(%{
-        conn: conn,
-        session: %{"_phxprof" => profile},
-        profile: profile,
-        toolbar_attrs: attrs
-      })
-      |> Phoenix.HTML.Safe.to_iodata()
-    catch
-      {kind, reason} ->
-        IO.puts(Exception.format(kind, reason, __STACKTRACE__))
-        []
-    end
+    %{
+      conn: conn,
+      session: %{"_phxprof" => profile},
+      profile: profile,
+      toolbar_attrs: attrs
+    }
+    |> ToolbarLive.toolbar()
+    |> Phoenix.HTML.Safe.to_iodata()
   end
 
   @doc false

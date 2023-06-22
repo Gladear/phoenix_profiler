@@ -21,10 +21,10 @@ defmodule PhoenixProfiler.Elements.MemoryUsage do
   end
 
   @impl PhoenixProfiler.Element
-  def subscribed_events, do: [[:phxprof, :plug, :stop]]
+  def subscribed_events, do: [[:phoenix, :endpoint, :stop]]
 
   @impl PhoenixProfiler.Element
-  def collect([:phxprof, :plug, :stop], _measurements, _metadata) do
+  def collect([:phoenix, :endpoint, :stop], _measurements, _metadata) do
     %{memory: process_memory(self())}
   end
 

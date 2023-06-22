@@ -2,7 +2,6 @@ defmodule PhoenixProfiler.Profile do
   # An internal data structure for a request profile.
   @moduledoc false
   defstruct [
-    :start_time,
     :system,
     :token
   ]
@@ -17,7 +16,6 @@ defmodule PhoenixProfiler.Profile do
 
   @type t :: %__MODULE__{
           :token => String.t(),
-          :start_time => integer(),
           :system => system()
         }
 
@@ -27,8 +25,7 @@ defmodule PhoenixProfiler.Profile do
   def new(token) when is_binary(token) do
     %__MODULE__{
       token: token,
-      system: system(),
-      start_time: System.monotonic_time()
+      system: system()
     }
   end
 

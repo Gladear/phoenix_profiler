@@ -24,8 +24,8 @@ defmodule PhoenixProfiler.Server do
   #
   # Example:
   #
-  #     iex> elements_by_event(%{MyModule => [[:phxprof, :plug, :stop]]})
-  #     %{[:phxprof, :plug, :stop] => [MyModule]}
+  #     iex> elements_by_event(%{MyModule => [[:phoenix, :endpoint, :stop]]})
+  #     %{[:phoenix, :endpoint, :stop] => [MyModule]}
   #
   defp elements_by_event(events) do
     Enum.reduce(events, %{}, fn {key, values}, acc ->

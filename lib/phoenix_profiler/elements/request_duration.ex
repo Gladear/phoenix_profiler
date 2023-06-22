@@ -4,16 +4,12 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
   @impl PhoenixProfiler.Element
   def render(assigns) do
     ~H"""
-    <.element :if={@total} aria-label="Durations">
+    <.element :if={@endpoint} aria-label="Durations">
       <:item>
-        <.current_duration total={@total} latest_event={@latest_event} />
+        <.current_duration endpoint={@endpoint} latest_event={@latest_event} />
       </:item>
 
       <:details>
-        <.item :if={@total}>
-          <:label>Total Duration</:label>
-          <:value><%= @total.value %><%= @total.label %></:value>
-        </.item>
         <.item :if={@endpoint}>
           <:label>Endpoint Duration</:label>
           <:value><%= @endpoint.value %><%= @endpoint.label %></:value>
@@ -32,7 +28,7 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
       assign_new(assigns, :duration, fn ->
         if event = assigns.latest_event,
           do: event,
-          else: assigns.total
+          else: assigns.endpoint
       end)
 
     ~H"""
@@ -44,17 +40,12 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
   @impl PhoenixProfiler.Element
   def subscribed_events,
     do: [
-      [:phxprof, :plug, :stop],
       [:phoenix, :endpoint, :stop],
       [:phoenix, :live_view, :handle_event, :stop],
       [:phoenix, :live_component, :handle_event, :stop]
     ]
 
   @impl PhoenixProfiler.Element
-  def collect([:phxprof, :plug, :stop], measurements, _metadata) do
-    %{total: measurements.duration}
-  end
-
   def collect([:phoenix, :endpoint, :stop], measurements, _metadata) do
     %{endpoint: measurements.duration}
   end
@@ -67,7 +58,6 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
   @impl PhoenixProfiler.Element
   def entries_assigns([]) do
     %{
-      total: nil,
       endpoint: nil,
       latest_event: nil
     }
@@ -77,7 +67,6 @@ defmodule PhoenixProfiler.Elements.RequestDuration do
     data = Enum.reduce(entries, &Map.merge/2)
 
     %{
-      total: formatted_duration(data[:total]),
       endpoint: formatted_duration(data[:endpoint]),
       latest_event: formatted_duration(data[:latest_event])
     }

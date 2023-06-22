@@ -29,7 +29,7 @@ defmodule DemoWeb.DummyLive do
 
   @impl true
   def handle_event("event", _params, socket) do
-    :telemetry.execute([:phxprof, :plug, :stop], %{duration: 500})
+    Process.sleep(1000)
     {:noreply, socket}
   end
 end
