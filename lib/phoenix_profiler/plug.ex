@@ -21,10 +21,7 @@ defmodule PhoenixProfiler.Plug do
   end
 
   def call(conn, _opts) do
-    endpoint = conn.private.phoenix_endpoint
-    config = endpoint.config(:phoenix_profiler)
-
-    if config do
+    if Profiler.enabled?(conn) do
       token = conn_token(conn)
 
       conn
