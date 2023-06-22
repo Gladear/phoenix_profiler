@@ -54,45 +54,45 @@ defmodule PhoenixProfiler.ToolbarLive do
 
     <div class="phxprof-toolbar-spacer" />
 
-    <.profile_panel profile={@profile} />
+    <.system_element token={@profile.token} system={@system} />
     <.hide_button token={@profile.token} />
     """
   end
 
-  defp profile_panel(assigns) do
+  defp system_element(assigns) do
     ~H"""
     <div class="phxprof-element" aria-label="Config">
       <div class="phxprof-element-item phxprof-element-phoenix-logo">
-        <%= @profile.system.phoenix %>
+        <%= @system.phoenix %>
       </div>
 
       <div class="phxprof-toolbar-details" style="left: auto; right: 0px">
         <span class="phxprof-item-label">Profiler Token</span>
-        <span class="phxprof-item-value"><%= @profile.token %></span>
+        <span class="phxprof-item-value"><%= @token %></span>
 
         <span class="phxprof-item-label">LiveView Version</span>
         <span class="phxprof-item-value">
-          <a href={"https://hexdocs.pm/phoenix_live_view/#{@profile.system.phoenix_live_view}/"}>
-            <%= @profile.system.phoenix_live_view %>
+          <a href={"https://hexdocs.pm/phoenix_live_view/#{@system.phoenix_live_view}/"}>
+            <%= @system.phoenix_live_view %>
           </a>
         </span>
 
         <span class="phxprof-item-label">Elixir Version</span>
         <span class="phxprof-item-value">
-          <a href={"https://hexdocs.pm/elixir/#{@profile.system.elixir}/"}>
-            <%= @profile.system.elixir %>
+          <a href={"https://hexdocs.pm/elixir/#{@system.elixir}/"}>
+            <%= @system.elixir %>
           </a>
         </span>
 
         <span class="phxprof-item-label">OTP Release</span>
         <span class="phxprof-item-value">
-          <a href="https://erlang.org/erldoc"><%= @profile.system.otp %></a>
+          <a href="https://erlang.org/erldoc"><%= @system.otp %></a>
         </span>
 
         <span class="phxprof-item-label">Resources</span>
         <span class="phxprof-item-value">
-          <a href={"https://hexdocs.pm/phoenix/#{@profile.system.phoenix}"}>
-            Read Phoenix <%= @profile.system.phoenix %> Docs
+          <a href={"https://hexdocs.pm/phoenix/#{@system.phoenix}"}>
+            Read Phoenix <%= @system.phoenix %> Docs
           </a>
         </span>
 
@@ -103,8 +103,8 @@ defmodule PhoenixProfiler.ToolbarLive do
 
         <span class="phxprof-item-label">Toolbar version</span>
         <span class="phxprof-item-value">
-          <a href={"https://hexdocs.pm/phoenix_profiler/#{@profile.system.phoenix_profiler}"}>
-            <%= @profile.system.phoenix_profiler %>
+          <a href={"https://hexdocs.pm/phoenix_profiler/#{@system.phoenix_profiler}"}>
+            <%= @system.phoenix_profiler %>
           </a>
         </span>
       </div>
@@ -139,6 +139,7 @@ defmodule PhoenixProfiler.ToolbarLive do
 
     socket =
       socket
+      |> assign(:system, system_info())
       |> assign_elements_assigns(data_entries)
       |> assign(:profile, profile)
 
@@ -146,7 +147,7 @@ defmodule PhoenixProfiler.ToolbarLive do
       Server.subscribe(self(), profile.token)
     end
 
-    {:ok, socket}
+    {:ok, socket, temporary_assigns: [system: nil]}
   end
 
   @impl Phoenix.LiveView
@@ -165,5 +166,20 @@ defmodule PhoenixProfiler.ToolbarLive do
       end)
 
     assign(socket, :elements_assigns, element_assigns)
+  end
+
+  # Returns a map of system version metadata.
+  defp system_info do
+    system_versions = %{
+      elixir: System.version(),
+      otp: System.otp_release()
+    }
+
+    deps_versions =
+      for app <- [:phoenix, :phoenix_live_view, :phoenix_profiler], into: %{} do
+        {app, Application.spec(app)[:vsn]}
+      end
+
+    Map.merge(system_versions, deps_versions)
   end
 end
