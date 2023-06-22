@@ -40,9 +40,20 @@ defmodule PhoenixProfiler.Server do
   """
   @spec add_observable(token | nil) :: token when token: binary()
   def add_observable(token \\ nil) do
-    token = token || Utils.generate_token()
+    token = token || generate_token()
     put_token(token)
     token
+  end
+
+  # Unique ID generation
+  # Copyright (c) 2013 Plataformatec.
+  # https://github.com/elixir-plug/plug/blob/fb6b952cf93336dc79ec8d033e09a424d522ce56/lib/plug/request_id.ex
+  defp generate_token do
+    binary =
+      <<System.system_time(:nanosecond)::64, :erlang.phash2({node(), self()}, 16_777_216)::24,
+        :erlang.unique_integer()::32>>
+
+    Base.url_encode64(binary)
   end
 
   @doc """

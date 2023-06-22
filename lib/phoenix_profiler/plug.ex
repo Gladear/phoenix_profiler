@@ -75,21 +75,21 @@ defmodule PhoenixProfiler.Plug do
     config = Utils.conn_or_socket_config(conn)
 
     toolbar_attrs = Keyword.get(config, :toolbar_attrs, [])
-    profile = conn.private.phoenix_profiler
+    token = conn.private.phoenix_profiler
 
     attrs =
       Keyword.merge(
         toolbar_attrs,
         class: "phxprof-toolbar",
-        "data-token": profile.token,
+        "data-token": token,
         role: "region",
         name: "Phoenix Web Debug Toolbar"
       )
 
     %{
       conn: conn,
-      session: %{"_phxprof" => profile},
-      profile: profile,
+      session: %{"_phxprof" => token},
+      token: token,
       toolbar_attrs: attrs
     }
     |> ToolbarLive.toolbar()

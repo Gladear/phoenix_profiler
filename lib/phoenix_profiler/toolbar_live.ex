@@ -3,7 +3,6 @@ defmodule PhoenixProfiler.ToolbarLive do
   @moduledoc false
   use Phoenix.LiveView, container: {:div, [class: "phxprof-toolbar-view"]}
 
-  alias PhoenixProfiler.Profile
   alias PhoenixProfiler.Server
   alias PhoenixProfiler.Utils
 
@@ -25,11 +24,11 @@ defmodule PhoenixProfiler.ToolbarLive do
         <button
           class="show-button"
           type="button"
-          id={"phxprof-toolbar-show-#{@profile.token}"}
+          id={"phxprof-toolbar-show-#{@token}"}
           title="Show Toolbar"
           accesskey="D"
           aria-expanded="true"
-          aria-controls={"phxprof-toolbar-main-#{@profile.token}"}
+          aria-controls={"phxprof-toolbar-main-#{@token}"}
         >
         </button>
       </div>
@@ -54,8 +53,8 @@ defmodule PhoenixProfiler.ToolbarLive do
 
     <div class="phxprof-toolbar-spacer" />
 
-    <.system_element token={@profile.token} system={@system} />
-    <.hide_button token={@profile.token} />
+    <.system_element token={@token} system={@system} />
+    <.hide_button token={@token} />
     """
   end
 
@@ -134,20 +133,20 @@ defmodule PhoenixProfiler.ToolbarLive do
   end
 
   @impl Phoenix.LiveView
-  def mount(_, %{"_phxprof" => %Profile{} = profile}, socket) do
-    data_entries = Server.get_entries(profile.token)
+  def mount(_, %{"_phxprof" => token}, socket) do
+    data_entries = Server.get_entries(token)
 
     socket =
       socket
       |> assign(:system, system_info())
+      |> assign(:token, token)
       |> assign_elements_assigns(data_entries)
-      |> assign(:profile, profile)
 
     if connected?(socket) do
-      Server.subscribe(self(), profile.token)
+      Server.subscribe(self(), token)
     end
 
-    {:ok, socket, temporary_assigns: [system: nil]}
+    {:ok, socket, temporary_assigns: [system: nil, token: nil]}
   end
 
   @impl Phoenix.LiveView

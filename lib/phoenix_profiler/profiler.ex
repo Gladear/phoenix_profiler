@@ -1,6 +1,5 @@
 defmodule PhoenixProfiler.Profiler do
   @moduledoc false
-  alias PhoenixProfiler.Profile
   alias PhoenixProfiler.Server
   alias PhoenixProfiler.Utils
 
@@ -27,7 +26,7 @@ defmodule PhoenixProfiler.Profiler do
       conn_or_socket
     else
       observable_token = Server.add_observable(token)
-      new_profile(conn_or_socket, observable_token)
+      set_token(conn_or_socket, observable_token)
     end
   end
 
@@ -54,12 +53,12 @@ defmodule PhoenixProfiler.Profiler do
   defp ensure_connected_socket!(_), do: :ok
 
   defp profile_set?(conn_or_socket) do
-    match?(%{:phoenix_profiler => %Profile{}}, conn_or_socket.private)
+    match?(%{:phoenix_profiler => token} when is_binary(token), conn_or_socket.private)
   end
 
-  defp new_profile(conn_or_socket, token) do
-    profile = Profile.new(token)
+  defp set_token(%Plug.Conn{} = conn, token),
+    do: Plug.Conn.put_private(conn, :phoenix_profiler, token)
 
-    Utils.put_private(conn_or_socket, :phoenix_profiler, profile)
-  end
+  defp set_token(%Phoenix.LiveView.Socket{} = socket, token),
+    do: put_in(socket.private[:phoenix_profiler], token)
 end
