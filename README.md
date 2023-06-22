@@ -13,29 +13,40 @@ Provides a **development tool** that gives detailed information about the execut
 
 * Basic diagnostics - response time, memory
 
-* Inspect LiveView crashes
+* Inspect LiveView crashes (Coming Soon)
 
-* Inspect Ecto queries (Coming Soon)
+* Inspect Ecto queries
 
 * Swoosh mailer integration (Coming Soon)
+
+
+<!-- * Custom elements TODO Document  -->
 
 ## Installation
 
 To start using the profiler, you will need the following steps:
 
-1. Add the `phoenix_profiler` dependency
+1. Add and configure the `phoenix_profiler` dependency
 2. Enable the profiler on your Endpoint
 3. Configure LiveView
 4. Add the `PhoenixProfiler` plug
-5. Mount the profiler on your LiveViews
-6. Add the profiler page on your LiveDashboard (optional)
+5. Mount the profiler on your LiveViews (optional)
+6. Send the profiler token in you AJAX requests (recommended)
+<!-- 7. Add the profiler page on your LiveDashboard (optional) -->
 
 ### 1. Add the phoenix_profiler dependency
 
 Add phoenix_profiler to your `mix.exs`:
 
 ```elixir
-{:phoenix_profiler, "~> 0.2.0"}
+{:phoenix_profiler, "~> 0.4.0"}
+```
+
+If you're using Ecto, configure the repositories you want the profiler to listen to
+
+```elixir
+config :phoenix_profiler,
+  ecto_repos: [MyApp.Repo]
 ```
 
 ### 2. Enable the profiler on your Endpoint
@@ -50,21 +61,18 @@ config :my_app, MyAppWeb.Endpoint,
   phoenix_profiler: []
 ```
 
-All web configuration is done inside the `:phoenix_profiler` key on the endpoint.
+Most of the `:phoenix_profiler` configuration is endpoint dependant.
 
 The following options are available:
 
 * `:enable` - When set to `false`, disables profiling by default. You can
   always enable profiling on a request via `enable/1`. Defaults to `true`.
 
-* `:profiler_link_base` - The base path for generating links
-  on the toolbar. Defaults to `"/dashboard/_profiler"`.
-
 * `:toolbar_attrs` - HTML attributes to be given to the element
   injected for the toolbar. Expects a keyword list of atom keys and
   string values. Defaults to `[]`.
 
-### 4. Configure LiveView
+### 3. Configure LiveView
 
 > If LiveView is already installed in your app, you may skip this section.
 
@@ -79,7 +87,7 @@ config :my_app, MyAppWeb.Endpoint,
   live_view: [signing_salt: "SECRET_SALT"]
 ```
 
-### 5. Add the PhoenixProfiler plug
+### 4. Add the PhoenixProfiler plug
 
 Add the `PhoenixProfiler` plug within the `code_reloading?`
 block on your Endpoint (usually in `lib/my_app_web/endpoint.ex`):
@@ -91,7 +99,7 @@ block on your Endpoint (usually in `lib/my_app_web/endpoint.ex`):
   end
 ```
 
-### 6. Mount the profiler on your LiveViews
+### 5. Mount the profiler on your LiveViews
 
 Note this section is required only if you are using LiveView, otherwise you may skip it.
 
@@ -110,8 +118,58 @@ web module (usually in `lib/my_app_web.ex`):
   end
 ```
 
+Then, in your `app.js`, add the token as a parameter of the `LiveSocket`:
+
+```javascript
+// window.getPhxProfToken is defined when the toolbar is displayed
+let phxprofToken = window.getPhxProfToken?.();
+
+let liveSocket = new LiveSocket("/live", Socket, {params: {..., _phxprof_token: phxprofToken}})
+```
+
 This is all. Run `mix phx.server` and observe the toolbar on your browser requests.
 
+### 6. Send the profiler token in you AJAX requests
+
+Note this section is required only if you are do AJAX calls to your backend in your JavaScript, otherwise you may skip it.
+
+When doing an AJAX call, you need to send an extra `x-phxprof-token` header, with the value of the token you got from the `window.getPhxProfToken` function.
+
+```javascript
+let phxprofToken = window.getPhxProfToken?.();
+
+// fetch example
+fetch("/api", {
+  headers: {
+    "x-phxprof-token": phxprofToken
+  }
+});
+
+// XMLHttpRequest example
+let xhr = new XMLHttpRequest();
+xhr.open("GET", "/api");
+xhr.setRequestHeader("x-phxprof-token", phxprofToken);
+xhr.send();
+
+// axios example
+axios.get("/api", {
+  headers: {
+    "x-phxprof-token": phxprofToken
+  }
+});
+
+// jQuery example
+$.ajax({
+  url: "/api",
+  headers: {
+    "x-phxprof-token": phxprofToken
+  }
+});
+```
+
+This will allow the profiler to track the AJAX requests and show their stats on the toolbar as well.
+
+<!--
 ### 7. Add the profiler page on your LiveDashboard (optional)
 
 Note this section is required for the LiveDashboard integration. If you are
@@ -131,6 +189,7 @@ live_dashboard "/dashboard",
     # additional pages...
   ]
 ```
+-->
 
 ## Troubleshooting
 
