@@ -3,8 +3,6 @@ defmodule PhoenixProfiler.ToolbarLive do
   @moduledoc false
   use Phoenix.LiveView, container: {:div, [class: "phxprof-toolbar-view"]}
 
-  require Logger
-
   alias PhoenixProfiler.Profile
   alias PhoenixProfiler.Server
   alias PhoenixProfiler.Utils
