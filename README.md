@@ -68,6 +68,11 @@ The following options are available:
 * `:enable` - When set to `false`, disables profiling by default. You can
   always enable profiling on a request via `enable/1`. Defaults to `true`.
 
+* `:except_patterns` - A list of path where the profiler should not be
+  enabled. Defaults to `[["phoenix", "live_reload", "frame"]]`. If you
+  override it, make sure to include the default patterns. All paths
+  that starts with the given pattern will be excluded.
+
 * `:toolbar_attrs` - HTML attributes to be given to the element
   injected for the toolbar. Expects a keyword list of atom keys and
   string values. Defaults to `[]`.

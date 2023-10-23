@@ -13,13 +13,6 @@ defmodule PhoenixProfiler.Plug do
     opts
   end
 
-  # TODO: remove this clause when we add config for profiler except_patterns
-  def call(%Plug.Conn{path_info: ["phoenix", "live_reload", "frame" | _suffix]} = conn, _) do
-    # this clause is to ignore the phoenix live reload iframe in case someone installs
-    # the toolbar plug above the LiveReloader plug in their Endpoint.
-    conn
-  end
-
   def call(conn, _opts) do
     if Profiler.enabled?(conn) do
       token = conn_token(conn)

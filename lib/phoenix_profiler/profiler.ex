@@ -9,8 +9,20 @@ defmodule PhoenixProfiler.Profiler do
   @spec enabled?(receiver) :: boolean() when receiver: Plug.Conn.t() | Phoenix.Socket.t()
   def enabled?(conn_or_socket) do
     config = Utils.conn_or_socket_config(conn_or_socket)
-    Keyword.get(config, :enabled?, true)
+    Keyword.get(config, :enabled?, true) and not match_except_patterns?(conn_or_socket, config)
   end
+
+  @default_except_patterns [["phoenix", "live_reload", "frame"]]
+
+  defp match_except_patterns?(%Plug.Conn{} = conn, config) do
+    except_patterns = Keyword.get(config, :except_patterns, @default_except_patterns)
+
+    Enum.any?(except_patterns, fn pattern ->
+      List.starts_with?(conn.path_info, pattern)
+    end)
+  end
+
+  defp match_except_patterns?(%Phoenix.LiveView.Socket{} = _socket, _config), do: false
 
   @doc """
   Enables the profiler on a given `conn` or `socket`.
