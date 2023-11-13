@@ -146,7 +146,7 @@ defmodule PhoenixProfiler.ToolbarLive do
       Server.subscribe(self(), token)
     end
 
-    {:ok, socket, temporary_assigns: [system: nil, token: nil]}
+    {:ok, socket, layout: false, temporary_assigns: [system: nil, token: nil]}
   end
 
   @impl Phoenix.LiveView
