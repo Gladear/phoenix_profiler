@@ -24,7 +24,7 @@ defmodule PhoenixProfiler.MixProject do
 
   defp deps do
     [
-      {:phoenix_live_view, "~> 0.19"}
+      {:phoenix_live_view, "~> 1.0"}
     ]
   end
 
